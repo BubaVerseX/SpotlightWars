@@ -1,4 +1,4 @@
-import type { PlayerProfile } from "./types";
+import type { AiDifficulty, PlayerProfile, VsComputerStats } from "./types";
 
 export type CosmeticCategory = "skin" | "animation" | "title";
 
@@ -19,8 +19,10 @@ export interface AchievementDefinition {
   id: string;
   name: string;
   description: string;
-  metric: "matchWins" | "winStreak" | "eloReached";
+  metric: "matchWins" | "winStreak" | "eloReached" | "vsComputerWin";
   target: number;
+  /** Only set when metric is "vsComputerWin" — which difficulty must be beaten. */
+  vsComputerDifficulty?: AiDifficulty;
 }
 
 export const DEFAULT_SKIN = "skin:default";
@@ -68,6 +70,22 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     description: "Reach 1300 ELO",
     metric: "eloReached",
     target: 1300,
+  },
+  {
+    id: "beat-hard-ai",
+    name: "Outmaneuvered",
+    description: "Beat the Hard AI in practice mode",
+    metric: "vsComputerWin",
+    target: 1,
+    vsComputerDifficulty: "hard",
+  },
+  {
+    id: "beat-impossible-ai",
+    name: "Ghost In The Machine",
+    description: "Beat the Impossible AI in practice mode",
+    metric: "vsComputerWin",
+    target: 1,
+    vsComputerDifficulty: "impossible",
   },
 ];
 
@@ -164,6 +182,15 @@ export const COSMETICS: CosmeticDefinition[] = [
     achievementId: "elo-1300",
     color: "#ffd84a",
   },
+  {
+    id: "title:aiSlayer",
+    category: "title",
+    name: "AI Slayer",
+    description: "Awarded for beating the Impossible AI in practice mode.",
+    unlockMethod: "achievement",
+    achievementId: "beat-impossible-ai",
+    color: "#39ff88",
+  },
 ];
 
 export function getCosmetic(id: string | null | undefined): CosmeticDefinition | undefined {
@@ -173,6 +200,22 @@ export function getCosmetic(id: string | null | undefined): CosmeticDefinition |
 
 export function getCosmeticsByCategory(category: CosmeticCategory): CosmeticDefinition[] {
   return COSMETICS.filter((c) => c.category === category);
+}
+
+export function createEmptyVsComputerStats(): VsComputerStats {
+  return {
+    wins: { easy: 0, medium: 0, hard: 0, impossible: 0 },
+    losses: { easy: 0, medium: 0, hard: 0, impossible: 0 },
+  };
+}
+
+/** Older saved profiles predate vs-computer tracking; back-fill in place so
+ * every caller can rely on `profile.vsComputer` always being present. */
+export function ensureVsComputerStats(profile: PlayerProfile): VsComputerStats {
+  if (!profile.vsComputer) {
+    profile.vsComputer = createEmptyVsComputerStats();
+  }
+  return profile.vsComputer;
 }
 
 export function createDefaultProfile(name: string): PlayerProfile {
@@ -190,6 +233,7 @@ export function createDefaultProfile(name: string): PlayerProfile {
     equippedAnimation: DEFAULT_ANIMATION,
     equippedTitle: null,
     achievementProgress: {},
+    vsComputer: createEmptyVsComputerStats(),
   };
 }
 
@@ -227,6 +271,8 @@ function getAchievementProgress(achievement: AchievementDefinition, profile: Pla
       return profile.bestWinStreak;
     case "eloReached":
       return profile.peakElo;
+    case "vsComputerWin":
+      return ensureVsComputerStats(profile).wins[achievement.vsComputerDifficulty!];
   }
 }
 

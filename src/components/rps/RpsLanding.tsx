@@ -6,13 +6,16 @@ import { useRouter } from "next/navigation";
 import { NameGate } from "./NameGate";
 import { LeaderboardList } from "./LeaderboardList";
 import { PlayerBadge } from "./PlayerBadge";
+import { DifficultyPicker } from "./DifficultyPicker";
 import { useRpsName } from "@/lib/rps/use-name";
-import type { PlayerProfile } from "@/lib/rps/types";
+import type { AiDifficulty, PlayerProfile } from "@/lib/rps/types";
 import { Footer } from "@/components/Footer";
 
 interface RpsLandingProps {
   initialLeaderboard: PlayerProfile[];
 }
+
+type Panel = "menu" | "challengeLink" | "difficultyPicker";
 
 export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
   const { name, setName } = useRpsName();
@@ -20,6 +23,7 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
   const [busy, setBusy] = useState<"queue" | "challenge" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [challengeLink, setChallengeLink] = useState<string | null>(null);
+  const [panel, setPanel] = useState<Panel>("menu");
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
 
   useEffect(() => {
@@ -60,11 +64,16 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
       if (!res.ok) throw new Error("Couldn't create a challenge link. Try again.");
       const data = await res.json();
       setChallengeLink(`${window.location.origin}/challenge/${data.matchId}`);
+      setPanel("challengeLink");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setBusy(null);
     }
+  };
+
+  const handleSelectDifficulty = (difficulty: AiDifficulty) => {
+    router.push(`/computer/${difficulty}`);
   };
 
   if (!name) {
@@ -91,7 +100,7 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
           </Link>
         </div>
 
-        {!challengeLink ? (
+        {panel === "menu" && (
           <div className="flex w-full max-w-sm flex-col gap-3">
             <button
               type="button"
@@ -109,8 +118,22 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
             >
               {busy === "challenge" ? "Creating link..." : "Challenge a Friend"}
             </button>
+            <button
+              type="button"
+              onClick={() => setPanel("difficultyPicker")}
+              disabled={busy !== null}
+              className="arcade-btn w-full rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Play vs Computer
+            </button>
           </div>
-        ) : (
+        )}
+
+        {panel === "difficultyPicker" && (
+          <DifficultyPicker onSelect={handleSelectDifficulty} onBack={() => setPanel("menu")} />
+        )}
+
+        {panel === "challengeLink" && challengeLink && (
           <ChallengeLinkPanel
             link={challengeLink}
             onEnterMatch={() => router.push(`/match/${challengeLink.split("/").pop()}`)}

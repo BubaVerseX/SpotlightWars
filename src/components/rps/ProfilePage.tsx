@@ -12,6 +12,14 @@ import {
   type CosmeticCategory,
 } from "@/lib/rps/cosmetics";
 import { Footer } from "@/components/Footer";
+import { AI_DIFFICULTIES, AI_DIFFICULTY_LABEL } from "@/lib/rps/ai";
+
+const DIFFICULTY_COLOR: Record<string, string> = {
+  easy: "var(--neon-cyan)",
+  medium: "var(--neon-cyan)",
+  hard: "var(--neon-magenta)",
+  impossible: "var(--neon-gold)",
+};
 
 export function ProfilePage() {
   const { name, setName } = useRpsName();
@@ -100,6 +108,30 @@ export function ProfilePage() {
           <Stat label="ELO" value={profile.elo} color="var(--neon-cyan)" />
           <Stat label="Wins" value={profile.wins} color="var(--neon-cyan)" />
           <Stat label="Losses" value={profile.losses} color="var(--neon-magenta)" />
+        </div>
+
+        <div>
+          <p className="mb-1 text-center text-xs uppercase tracking-[0.3em] text-muted">
+            Practice Mode (vs Computer)
+          </p>
+          <p className="mb-3 text-center text-[10px] uppercase tracking-wide text-muted">
+            Not ranked — doesn&apos;t affect ELO
+          </p>
+          <div className="grid grid-cols-4 gap-2 text-center">
+            {AI_DIFFICULTIES.map((difficulty) => (
+              <div key={difficulty} className="arcade-panel rounded-lg px-2 py-3">
+                <p
+                  className="font-display text-xl font-bold"
+                  style={{ color: DIFFICULTY_COLOR[difficulty] }}
+                >
+                  {profile.vsComputer?.wins[difficulty] ?? 0}
+                </p>
+                <p className="text-[10px] uppercase tracking-wide text-muted">
+                  {AI_DIFFICULTY_LABEL[difficulty]}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
 
         <CosmeticSection

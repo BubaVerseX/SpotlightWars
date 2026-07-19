@@ -9,13 +9,8 @@ import {
   rpsMatchChannel,
 } from "@/lib/rps/constants";
 import { calculateEloChange, evaluateAchievements } from "@/lib/rps/cosmetics";
+import { decideWinner } from "@/lib/rps/game";
 import type { MatchStats, Move, RoundRevealPayload } from "@/lib/rps/types";
-
-function decideWinner(moveA: Move, moveB: Move): "A" | "B" | "draw" {
-  if (moveA === moveB) return "draw";
-  const beats: Record<Move, Move> = { rock: "scissors", paper: "rock", scissors: "paper" };
-  return beats[moveA] === moveB ? "A" : "B";
-}
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);

@@ -1,5 +1,14 @@
 export type Move = "rock" | "paper" | "scissors";
 
+export type AiDifficulty = "easy" | "medium" | "hard" | "impossible";
+
+/** Wins/losses vs the computer, kept separate from ranked human stats and
+ * excluded from ELO entirely. */
+export interface VsComputerStats {
+  wins: Record<AiDifficulty, number>;
+  losses: Record<AiDifficulty, number>;
+}
+
 export interface MoveEntry {
   name: string;
   move: Move;
@@ -18,6 +27,7 @@ export interface PlayerProfile {
   equippedAnimation: string;
   equippedTitle: string | null;
   achievementProgress: Record<string, number>;
+  vsComputer: VsComputerStats;
 }
 
 export interface MatchStats {
