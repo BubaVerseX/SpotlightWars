@@ -25,7 +25,7 @@ export function ChallengeJoin({ matchId }: { matchId: string }) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Couldn't join this challenge.");
       }
-      router.push(`/rps/match/${matchId}`);
+      router.push(`/match/${matchId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setJoining(false);

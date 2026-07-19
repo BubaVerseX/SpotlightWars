@@ -341,7 +341,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
       <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-16 text-center">
         <p className="text-muted">Enter a name on the home page first.</p>
         <button
-          onClick={() => router.push("/rps")}
+          onClick={() => router.push("/")}
           className="arcade-btn-solid rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide"
         >
           Back to Home
@@ -402,7 +402,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
               This match room is full
             </p>
             <button
-              onClick={() => router.push("/rps")}
+              onClick={() => router.push("/")}
               className="arcade-btn-solid rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide"
             >
               Back to Home
@@ -419,7 +419,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
               Opponent disconnected
             </p>
             <button
-              onClick={() => router.push("/rps")}
+              onClick={() => router.push("/")}
               className="arcade-btn-solid rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide"
             >
               Back to Matchmaking
@@ -535,7 +535,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
               eloBefore={myEloBefore ?? myProfile.elo}
               eloAfter={myProfile.elo}
               onRematch={handleRematch}
-              onPlayAgain={() => router.push("/rps")}
+              onPlayAgain={() => router.push("/")}
             />
           </div>
         )}

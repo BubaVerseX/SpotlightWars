@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import { Space_Grotesk } from "next/font/google";
+import { Orbitron } from "next/font/google";
 import "./globals.css";
+import "./rps-theme.css";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const orbitron = Orbitron({
+  variable: "--font-orbitron",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["500", "700", "900"],
 });
 
-const title = "SpotlightWars — Pay to Interrupt Everyone Here";
+const title = "Rock Paper Scissors — SpotlightWars";
 const description =
-  "A live shared billboard. Watch how many people are online right now, then pay any amount in ETH, SOL, or BTC to take over every connected screen with your message for a few seconds.";
+  "Live real-time Rock Paper Scissors matchmaking. Find a random opponent or challenge a friend, climb the ELO leaderboard, and unlock cosmetics.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
@@ -34,9 +35,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} h-full`}>
-      <body className="flex min-h-full flex-col bg-background text-foreground antialiased">
-        {children}
+    <html lang="en" className={`${orbitron.variable} h-full`}>
+      <body className="rps-theme relative flex min-h-full flex-1 flex-col antialiased">
+        <div className="rps-grid-bg" aria-hidden="true" />
+        <div className="rps-scanlines" aria-hidden="true" />
+        <div className="relative z-10 flex flex-1 flex-col">{children}</div>
       </body>
     </html>
   );

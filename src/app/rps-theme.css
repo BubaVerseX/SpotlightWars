@@ -1,14 +1,16 @@
 /*
- * Tron-style neon arcade theme — scoped entirely to `.rps-theme` (applied
- * once in src/app/rps/layout.tsx), so none of it touches the amber
- * SpotlightWars site outside /rps.
+ * Tron-style neon arcade theme — the site's default look, applied via
+ * `.rps-theme` on <body> in src/app/layout.tsx. The /spotlight subtree
+ * escapes it again with its own `.spotlight-theme` scope (see
+ * src/app/spotlight/spotlight-theme.css), so the two features keep
+ * separate visual identities without either bleeding into the other.
  *
- * Most of the existing RPS components already use semantic Tailwind
- * tokens (bg-background, text-accent, border-border, .glow-text, etc.)
- * whose underlying CSS variables are redefined below — so overriding the
- * variables re-themes those elements for free through normal cascade.
- * New effects (grid floor, scanlines, glowing outlined panels, pulse /
- * flicker animations) get their own classes.
+ * Most components already use semantic Tailwind tokens (bg-background,
+ * text-accent, border-border, .glow-text, etc.) whose underlying CSS
+ * variables are redefined below — so overriding the variables re-themes
+ * those elements for free through normal cascade. New effects (grid
+ * floor, scanlines, glowing outlined panels, pulse/flicker animations)
+ * get their own classes.
  */
 
 .rps-theme {

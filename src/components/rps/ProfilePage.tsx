@@ -76,7 +76,7 @@ export function ProfilePage() {
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-16">
         <div className="arcade-panel rounded-lg p-6 text-center">
           <Link
-            href="/rps"
+            href="/"
             className="text-xs text-muted underline-offset-2 hover:text-[var(--neon-cyan)] hover:underline"
           >
             &larr; Back to Rock Paper Scissors

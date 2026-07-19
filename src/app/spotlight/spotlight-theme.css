@@ -1,0 +1,25 @@
+/*
+ * The original SpotlightWars amber theme, scoped to `.spotlight-theme`
+ * (applied once in src/app/spotlight/layout.tsx). The site default is now
+ * the Tron/RPS neon theme (see src/app/rps-theme.css) applied on <body>,
+ * so this class re-declares the same variable names to escape that
+ * override for the /spotlight subtree only — it never bleeds back out.
+ */
+
+.spotlight-theme {
+  --background: #08070a;
+  --background-elevated: #131117;
+  --foreground: #f5f1e8;
+  --muted: #928c82;
+  --accent: #f5b942;
+  --accent-soft: rgba(245, 185, 66, 0.28);
+  --border: #26222a;
+
+  --font-display: var(--font-space-grotesk);
+
+  position: relative;
+  isolation: isolate;
+  background: radial-gradient(ellipse at top, #17141b 0%, var(--background) 55%);
+  color: var(--foreground);
+  font-family: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+}

@@ -41,7 +41,7 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
       });
       if (!res.ok) throw new Error("Matchmaking failed. Try again.");
       const data = await res.json();
-      router.push(`/rps/match/${data.matchId}`);
+      router.push(`/match/${data.matchId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setBusy(null);
@@ -59,7 +59,7 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
       });
       if (!res.ok) throw new Error("Couldn't create a challenge link. Try again.");
       const data = await res.json();
-      setChallengeLink(`${window.location.origin}/rps/challenge/${data.matchId}`);
+      setChallengeLink(`${window.location.origin}/challenge/${data.matchId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -86,7 +86,7 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
         <div className="flex flex-col items-center gap-3 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-muted">Playing as</p>
           <PlayerBadge name={name} elo={profile?.elo} equippedTitle={profile?.equippedTitle} />
-          <Link href="/rps/profile" className="text-xs text-muted underline-offset-2 hover:text-accent hover:underline">
+          <Link href="/profile" className="text-xs text-muted underline-offset-2 hover:text-accent hover:underline">
             View profile &amp; cosmetics
           </Link>
         </div>
@@ -113,7 +113,7 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
         ) : (
           <ChallengeLinkPanel
             link={challengeLink}
-            onEnterMatch={() => router.push(`/rps/match/${challengeLink.split("/").pop()}`)}
+            onEnterMatch={() => router.push(`/match/${challengeLink.split("/").pop()}`)}
           />
         )}
 
@@ -133,7 +133,7 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
           <LeaderboardList entries={initialLeaderboard} />
         </div>
       </main>
-      <Footer />
+      <Footer extraLink={{ href: "/spotlight", label: "Check out Spotlight Throne" }} />
     </>
   );
 }
