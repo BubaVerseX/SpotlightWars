@@ -50,3 +50,33 @@ body {
 .animate-takeover-in {
   animation: takeover-in 500ms cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+@keyframes clash-left {
+  0% {
+    transform: translateX(-60px) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes clash-right {
+  0% {
+    transform: translateX(60px) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-clash-left {
+  animation: clash-left 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-clash-right {
+  animation: clash-right 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}

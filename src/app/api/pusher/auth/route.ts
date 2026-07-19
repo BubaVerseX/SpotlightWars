@@ -24,9 +24,10 @@ export async function POST(req: NextRequest) {
   }
 
   const userId = randomUUID();
+  const name = params.get("name")?.trim().slice(0, 24);
   const authResponse = pusher.authorizeChannel(socketId, channelName, {
     user_id: userId,
-    user_info: { id: userId },
+    user_info: name ? { id: userId, name } : { id: userId },
   });
 
   return NextResponse.json(authResponse);
