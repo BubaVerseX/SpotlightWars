@@ -9,6 +9,7 @@ import {
   COUNTDOWN_SECONDS,
   MOVES,
   NEXT_ROUND_DELAY_MS,
+  QUEUE_WAIT_TIMEOUT_SECONDS,
   REVEAL_DURATION_MS,
   RPS_REMATCH_EVENT,
   RPS_REVEAL_EVENT,
@@ -31,6 +32,7 @@ type Phase =
   | "loading"
   | "unavailable"
   | "waiting"
+  | "queueTimedOut"
   | "full"
   | "countdown"
   | "choosing"
@@ -267,6 +269,16 @@ export function MatchRoom({ matchId }: { matchId: string }) {
     };
   }, [matchId, name]);
 
+  // Give up on the wait after a while instead of hanging silently forever —
+  // covers both an empty random queue and a challenge link nobody opens.
+  useEffect(() => {
+    if (phase !== "waiting") return;
+    const timer = setTimeout(() => {
+      setPhase("queueTimedOut");
+    }, QUEUE_WAIT_TIMEOUT_SECONDS * 1000);
+    return () => clearTimeout(timer);
+  }, [phase]);
+
   // 3-2-1 countdown before each round.
   useEffect(() => {
     if (phase !== "countdown") return;
@@ -390,6 +402,24 @@ export function MatchRoom({ matchId }: { matchId: string }) {
             <p className="text-sm text-muted">
               Share your challenge link, or hang tight if you&apos;re in the random queue.
             </p>
+          </div>
+        )}
+
+        {phase === "queueTimedOut" && (
+          <div className="arcade-panel-magenta space-y-4 rounded-lg p-6">
+            <p
+              className="font-display text-2xl font-bold uppercase tracking-wide"
+              style={{ color: "var(--neon-magenta)" }}
+            >
+              No opponents found
+            </p>
+            <p className="text-sm text-muted">Nobody joined in time. Try again?</p>
+            <button
+              onClick={() => router.push("/")}
+              className="arcade-btn-solid rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide"
+            >
+              Back to Home
+            </button>
           </div>
         )}
 

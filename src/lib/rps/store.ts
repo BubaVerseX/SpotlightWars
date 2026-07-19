@@ -1,4 +1,4 @@
-import { kv } from "@vercel/kv";
+import { Redis } from "@upstash/redis";
 import { createDefaultProfile, createDefaultWalletProfile } from "./cosmetics";
 import type { MoveEntry, PlayerIdentity, PlayerProfile } from "./types";
 
@@ -163,69 +163,95 @@ class MemoryRpsStore implements RpsStore {
   }
 }
 
-/** Real persistence, backed by @vercel/kv (an Upstash Redis REST client). */
+/**
+ * Real persistence, backed directly by @upstash/redis rather than
+ * @vercel/kv. @vercel/kv's own client constructs its Redis client with
+ * `cache: "default"` instead of @upstash/redis's own safe `"no-store"`
+ * default (its source even has a comment explaining the override was based
+ * on old Next.js guidance). Running inside a Next.js Route Handler, that
+ * lets Next's fetch-patching layer cache these Upstash REST calls *across
+ * separate incoming requests* — so a write from one request (e.g. one
+ * matchmaking player claiming the queue) could be invisible to a
+ * *different* request's read moments later, forever, since the Data Cache
+ * doesn't know Redis is mutable out from under it. That's silently fatal
+ * for anything used as a mutex/queue, which is exactly what the random
+ * matchmaking queue below is. Constructing our own client with `cache:
+ * "no-store"` restores real per-request freshness for every read.
+ */
 class KvRpsStore implements RpsStore {
+  private redis = Redis.fromEnv({ cache: "no-store" });
+
   async get(key: string) {
-    const value = await kv.get<string>(key);
-    return value ?? null;
+    // The underlying Upstash client auto-deserializes any stored value that
+    // looks like JSON — including a string we ourselves JSON.stringify'd
+    // before calling set()/setNX() — so this can come back as a parsed
+    // object/number despite the `<string>` annotation below being nothing
+    // more than a type-level promise. Re-serialize whenever that happens so
+    // this method's actual return value always matches its Promise<string |
+    // null> contract; callers that JSON.parse() the result (e.g. the
+    // matchmaking queue) depend on that being genuinely true, not just
+    // typed that way.
+    const value = await this.redis.get<string>(key);
+    if (value === null || value === undefined) return null;
+    return typeof value === "string" ? value : JSON.stringify(value);
   }
 
   async set(key: string, value: string, ttlSeconds: number) {
-    await kv.set(key, value, { ex: ttlSeconds });
+    await this.redis.set(key, value, { ex: ttlSeconds });
   }
 
   async setNX(key: string, value: string, ttlSeconds: number) {
-    const result = await kv.set(key, value, { nx: true, ex: ttlSeconds });
+    const result = await this.redis.set(key, value, { nx: true, ex: ttlSeconds });
     return result === "OK";
   }
 
   async del(key: string) {
-    const count = await kv.del(key);
+    const count = await this.redis.del(key);
     return count > 0;
   }
 
   async incr(key: string, ttlSeconds?: number) {
-    const next = await kv.incr(key);
+    const next = await this.redis.incr(key);
     if (ttlSeconds && next === 1) {
-      await kv.expire(key, ttlSeconds);
+      await this.redis.expire(key, ttlSeconds);
     }
     return next;
   }
 
   async hsetMove(matchId: string, memberId: string, entry: MoveEntry) {
     const key = movesKey(matchId);
-    await kv.hset(key, { [memberId]: entry });
-    await kv.expire(key, 120);
+    await this.redis.hset(key, { [memberId]: entry });
+    await this.redis.expire(key, 120);
   }
 
   async getMoves(matchId: string) {
-    const raw = await kv.hgetall<Record<string, MoveEntry>>(movesKey(matchId));
+    const raw = await this.redis.hgetall<Record<string, MoveEntry>>(movesKey(matchId));
     return raw ?? {};
   }
 
   async clearMoves(matchId: string) {
-    await kv.del(movesKey(matchId));
+    await this.redis.del(movesKey(matchId));
   }
 
   async incrMatchScore(matchId: string, memberId: string) {
     const key = scoreKey(matchId);
-    const next = await kv.hincrby(key, memberId, 1);
-    await kv.expire(key, MATCH_STATE_TTL_SECONDS);
+    const next = await this.redis.hincrby(key, memberId, 1);
+    await this.redis.expire(key, MATCH_STATE_TTL_SECONDS);
     return next;
   }
 
   async getMatchScore(matchId: string) {
-    const raw = await kv.hgetall<Record<string, number>>(scoreKey(matchId));
+    const raw = await this.redis.hgetall<Record<string, number>>(scoreKey(matchId));
     return raw ?? {};
   }
 
   async clearMatchScore(matchId: string) {
-    await kv.del(scoreKey(matchId));
+    await this.redis.del(scoreKey(matchId));
   }
 
   async getOrCreatePlayer(identity: PlayerIdentity) {
     const key = keyForIdentity(identity);
-    const existing = await kv.get<PlayerProfile>(key);
+    const existing = await this.redis.get<PlayerProfile>(key);
     if (existing) return existing;
     const fresh = createProfileForIdentity(identity);
     await this.savePlayer(fresh);
@@ -234,18 +260,18 @@ class KvRpsStore implements RpsStore {
 
   async savePlayer(profile: PlayerProfile) {
     const key = keyForProfile(profile);
-    await kv.set(key, profile);
+    await this.redis.set(key, profile);
     // The sorted-set member is the full storage key (not the display name,
     // which is mutable/ENS-derived for wallet players) so leaderboard reads
     // can fetch the profile directly without re-deriving it from a name.
-    await kv.zadd(ELO_LEADERBOARD_KEY, { score: profile.elo, member: key });
+    await this.redis.zadd(ELO_LEADERBOARD_KEY, { score: profile.elo, member: key });
   }
 
   async topEloLeaderboard(count: number) {
-    const members = await kv.zrange<string[]>(ELO_LEADERBOARD_KEY, 0, count - 1, { rev: true });
+    const members = await this.redis.zrange<string[]>(ELO_LEADERBOARD_KEY, 0, count - 1, { rev: true });
     const profiles = await Promise.all(
       members.map(async (member) => {
-        const direct = await kv.get<PlayerProfile>(member);
+        const direct = await this.redis.get<PlayerProfile>(member);
         if (direct) return direct;
 
         // Back-compat: entries written before the wallet-identity storage
@@ -254,10 +280,10 @@ class KvRpsStore implements RpsStore {
         // it resolves, heal the sorted set so future reads take the fast
         // path above.
         const legacyKey = `rps:player:${member}`;
-        const legacy = await kv.get<PlayerProfile>(legacyKey);
+        const legacy = await this.redis.get<PlayerProfile>(legacyKey);
         if (legacy) {
-          await kv.zadd(ELO_LEADERBOARD_KEY, { score: legacy.elo, member: legacyKey });
-          await kv.zrem(ELO_LEADERBOARD_KEY, member);
+          await this.redis.zadd(ELO_LEADERBOARD_KEY, { score: legacy.elo, member: legacyKey });
+          await this.redis.zrem(ELO_LEADERBOARD_KEY, member);
         }
         return legacy;
       })

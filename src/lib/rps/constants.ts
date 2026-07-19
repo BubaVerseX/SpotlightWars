@@ -12,6 +12,9 @@ export const CHOOSE_SECONDS = 10;
 export const REVEAL_DURATION_MS = 2600;
 export const NEXT_ROUND_DELAY_MS = 1800;
 export const ROUNDS_TO_WIN = 2;
+/** How long to wait in the random-matchmaking queue before giving up and
+ * showing "no opponents found" instead of hanging silently forever. */
+export const QUEUE_WAIT_TIMEOUT_SECONDS = 40;
 
 export function rpsMatchChannel(matchId: string): string {
   return `${RPS_CHANNEL_PREFIX}${matchId}`;

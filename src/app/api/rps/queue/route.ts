@@ -47,8 +47,19 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    const existing = JSON.parse(existingRaw) as WaitingEntry;
-    return NextResponse.json({ matchId: existing.matchId });
+    // The entry is already consumed (deleted) at this point regardless of
+    // whether it parses. If it's somehow malformed — e.g. leftover data in
+    // an unexpected shape from a future format change — there's no valid
+    // waiting player to pair with, so fall through and let this caller
+    // become the new waiting player instead of failing the request.
+    try {
+      const existing = JSON.parse(existingRaw) as WaitingEntry;
+      if (existing && typeof existing.matchId === "string") {
+        return NextResponse.json({ matchId: existing.matchId });
+      }
+    } catch {
+      // fall through to the next loop iteration
+    }
   }
 
   return NextResponse.json({ error: "Matchmaking is busy, try again." }, { status: 503 });
