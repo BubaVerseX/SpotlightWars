@@ -1,7 +1,7 @@
-import type { PlayerProfile } from "@/lib/rps/types";
+import type { PublicPlayerProfile } from "@/lib/rps/types";
 import { getCosmetic, getRankTier } from "@/lib/rps/cosmetics";
 
-export function LeaderboardList({ entries }: { entries: PlayerProfile[] }) {
+export function LeaderboardList({ entries }: { entries: PublicPlayerProfile[] }) {
   if (entries.length === 0) {
     return <p className="text-center text-sm text-muted">No ranked players yet — be the first.</p>;
   }

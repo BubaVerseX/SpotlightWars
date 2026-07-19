@@ -23,22 +23,49 @@ const DIFFICULTY_COLOR: Record<string, string> = {
 };
 
 export function ProfilePage() {
-  const { name, setName, loading: identityLoading, isWalletVerified, walletAddress, refreshSession } =
-    useRpsIdentity();
+  const {
+    name,
+    clearName,
+    claimName,
+    checkNameAvailability,
+    claimToken,
+    loading: identityLoading,
+    isWalletVerified,
+    walletAddress,
+    refreshSession,
+  } = useRpsIdentity();
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!name) return;
     setLoading(true);
     setError(null);
-    fetch(`/api/rps/profile?name=${encodeURIComponent(name)}`)
-      .then((res) => res.json())
-      .then((data) => setProfile(data.profile))
+    const params = new URLSearchParams({ name });
+    if (claimToken) params.set("claimToken", claimToken);
+    fetch(`/api/rps/profile?${params}`)
+      .then(async (res) => {
+        if (res.status === 409) {
+          clearName();
+          return;
+        }
+        const data = await res.json();
+        setProfile(data.profile ?? null);
+      })
       .catch(() => setError("Couldn't load your profile."))
       .finally(() => setLoading(false));
-  }, [name]);
+  }, [name, claimToken, clearName]);
+
+  const handleClaimName = async (candidateName: string) => {
+    setClaimError(null);
+    setClaiming(true);
+    const result = await claimName(candidateName);
+    setClaiming(false);
+    if (!result.ok) setClaimError(result.error);
+  };
 
   const equip = async (
     field: "equippedSkin" | "equippedAnimation" | "equippedTitle",
@@ -48,7 +75,7 @@ export function ProfilePage() {
     const res = await fetch("/api/rps/profile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, [field]: value }),
+      body: JSON.stringify({ name, claimToken, [field]: value }),
     });
     if (res.ok) {
       const data = await res.json();
@@ -71,8 +98,11 @@ export function ProfilePage() {
           <NameGate
             title="Your Profile"
             subtitle="Enter your name to see your stats and cosmetics."
-            onSubmit={setName}
-            submitLabel="View Profile"
+            onSubmit={handleClaimName}
+            submitLabel={claiming ? "Checking..." : "View Profile"}
+            disabled={claiming}
+            error={claimError}
+            onCheckAvailability={checkNameAvailability}
           />
         </div>
         <p className="text-xs uppercase tracking-[0.3em] text-muted">or</p>
@@ -114,6 +144,15 @@ export function ProfilePage() {
           >
             {tier.name}
           </p>
+          {!isWalletVerified && (
+            <button
+              type="button"
+              onClick={clearName}
+              className="mt-2 text-xs text-muted underline-offset-2 hover:text-accent hover:underline"
+            >
+              Not you? Change name
+            </button>
+          )}
           <div className="mt-4 flex justify-center">
             <WalletConnect isWalletVerified={isWalletVerified} walletAddress={walletAddress} onChange={refreshSession} />
           </div>

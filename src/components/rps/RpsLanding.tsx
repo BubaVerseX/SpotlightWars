@@ -9,31 +9,63 @@ import { PlayerBadge } from "./PlayerBadge";
 import { DifficultyPicker } from "./DifficultyPicker";
 import { WalletConnect } from "./WalletConnect";
 import { useRpsIdentity } from "@/lib/rps/use-identity";
-import type { AiDifficulty, PlayerProfile } from "@/lib/rps/types";
+import type { AiDifficulty, PublicPlayerProfile } from "@/lib/rps/types";
 import { Footer } from "@/components/Footer";
 
 interface RpsLandingProps {
-  initialLeaderboard: PlayerProfile[];
+  initialLeaderboard: PublicPlayerProfile[];
 }
 
 type Panel = "menu" | "challengeLink" | "difficultyPicker";
 
 export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
-  const { name, setName, loading, isWalletVerified, walletAddress, refreshSession } = useRpsIdentity();
+  const {
+    name,
+    clearName,
+    claimName,
+    checkNameAvailability,
+    claimToken,
+    loading,
+    isWalletVerified,
+    walletAddress,
+    refreshSession,
+  } = useRpsIdentity();
   const router = useRouter();
   const [busy, setBusy] = useState<"queue" | "challenge" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [challengeLink, setChallengeLink] = useState<string | null>(null);
   const [panel, setPanel] = useState<Panel>("menu");
-  const [profile, setProfile] = useState<PlayerProfile | null>(null);
+  const [profile, setProfile] = useState<PublicPlayerProfile | null>(null);
+  const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!name) return;
-    fetch(`/api/rps/profile?name=${encodeURIComponent(name)}`)
-      .then((res) => res.json())
-      .then((data) => setProfile(data.profile))
+    const params = new URLSearchParams({ name });
+    if (claimToken) params.set("claimToken", claimToken);
+    fetch(`/api/rps/profile?${params}`)
+      .then(async (res) => {
+        if (res.status === 409) {
+          // Someone else already owns this name now (rare cross-device
+          // conflict) — fall back to the name-entry form instead of
+          // silently showing the wrong/stale data.
+          clearName();
+          setProfile(null);
+          return;
+        }
+        const data = await res.json();
+        setProfile(data.profile ?? null);
+      })
       .catch(() => setProfile(null));
-  }, [name]);
+  }, [name, claimToken, clearName]);
+
+  const handleClaimName = async (candidateName: string) => {
+    setClaimError(null);
+    setClaiming(true);
+    const result = await claimName(candidateName);
+    setClaiming(false);
+    if (!result.ok) setClaimError(result.error);
+  };
 
   const handleFindRandom = async () => {
     setError(null);
@@ -91,8 +123,11 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
         <NameGate
           title="Rock Paper Scissors"
           subtitle="Pick a name. Everyone will see it when they play you."
-          onSubmit={setName}
-          submitLabel="Let's go"
+          onSubmit={handleClaimName}
+          submitLabel={claiming ? "Checking..." : "Let's go"}
+          disabled={claiming}
+          error={claimError}
+          onCheckAvailability={checkNameAvailability}
         />
         <p className="text-xs uppercase tracking-[0.3em] text-muted">or</p>
         <WalletConnect isWalletVerified={isWalletVerified} walletAddress={walletAddress} onChange={refreshSession} />
@@ -104,11 +139,25 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
     <>
       <main className="flex flex-1 flex-col items-center justify-center gap-10 px-6 py-16">
         <div className="flex flex-col items-center gap-3 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted">Playing as</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-muted">Welcome back</p>
           <PlayerBadge name={name} elo={profile?.elo} equippedTitle={profile?.equippedTitle} />
-          <Link href="/profile" className="text-xs text-muted underline-offset-2 hover:text-accent hover:underline">
-            View profile &amp; cosmetics
-          </Link>
+          <div className="flex items-center gap-3 text-xs text-muted">
+            <Link href="/profile" className="underline-offset-2 hover:text-accent hover:underline">
+              View profile &amp; cosmetics
+            </Link>
+            {!isWalletVerified && (
+              <>
+                <span>·</span>
+                <button
+                  type="button"
+                  onClick={clearName}
+                  className="underline-offset-2 hover:text-accent hover:underline"
+                >
+                  Not you? Change name
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         <WalletConnect isWalletVerified={isWalletVerified} walletAddress={walletAddress} onChange={refreshSession} />

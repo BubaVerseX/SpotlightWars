@@ -25,6 +25,11 @@ export interface MoveEntry {
    * server-side at submission time (never trust a client-supplied address
    * string directly — see PlayerIdentity). */
   walletAddress: string | null;
+  /** The submitting device's claim token, captured at submission time —
+   * only meaningful when walletAddress is null. Lets match resolution
+   * verify (not just trust) that this player still owns `displayName`
+   * before touching that profile's stats — see name-claim.ts. */
+  claimToken: string | null;
 }
 
 export interface PlayerProfile {
@@ -34,6 +39,14 @@ export interface PlayerProfile {
    * has independently checked a SIWE session — never client-supplied. */
   walletAddress: string | null;
   ensName: string | null;
+  /** Lightweight anti-collision protection for name-based (non-wallet)
+   * profiles — a long random string the claiming device generated and keeps
+   * in localStorage. `null` means unclaimed: either brand new, or a legacy
+   * profile from before this field existed (auto-claimed by whoever next
+   * loads it — see name-claim.ts). Never sent to any client; strip it via
+   * toPublicProfile() before returning a profile anywhere. Always null for
+   * wallet profiles, which use the SIWE session as their real claim. */
+  claimToken: string | null;
   elo: number;
   peakElo: number;
   wins: number;
@@ -47,6 +60,11 @@ export interface PlayerProfile {
   achievementProgress: Record<string, number>;
   vsComputer: VsComputerStats;
 }
+
+/** What's safe to ever send to a client — every PlayerProfile that crosses
+ * an API/page boundary should be this shape, never the raw PlayerProfile
+ * (which carries claimToken, a bearer secret). See toPublicProfile(). */
+export type PublicPlayerProfile = Omit<PlayerProfile, "claimToken">;
 
 export interface MatchStats {
   name: string;

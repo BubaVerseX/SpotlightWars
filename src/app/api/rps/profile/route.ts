@@ -2,29 +2,54 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRpsStore } from "@/lib/rps/store";
 import { MAX_NAME_LENGTH } from "@/lib/rps/constants";
 import { resolveIdentity } from "@/lib/rps/session";
+import { claimOrLoadNamedProfile, toPublicProfile } from "@/lib/rps/name-claim";
+import type { PlayerProfile } from "@/lib/rps/types";
+
+const TAKEN_ERROR = "This name is already taken — try another one.";
 
 export async function GET(req: NextRequest) {
   const name = req.nextUrl.searchParams.get("name")?.trim().slice(0, MAX_NAME_LENGTH) ?? "";
+  const claimToken = req.nextUrl.searchParams.get("claimToken");
   const identity = resolveIdentity(req, name);
   if (!identity) {
     return NextResponse.json({ error: "name is required." }, { status: 400 });
   }
 
   const store = getRpsStore();
-  const profile = await store.getOrCreatePlayer(identity);
-  return NextResponse.json({ profile });
+
+  if (identity.kind === "wallet") {
+    const profile = await store.getOrCreatePlayer(identity);
+    return NextResponse.json({ profile: toPublicProfile(profile) });
+  }
+
+  const result = await claimOrLoadNamedProfile(store, identity.name, claimToken);
+  if (result.status === "taken") {
+    return NextResponse.json({ error: TAKEN_ERROR }, { status: 409 });
+  }
+  return NextResponse.json({ profile: toPublicProfile(result.profile) });
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const name = typeof body?.name === "string" ? body.name.trim().slice(0, MAX_NAME_LENGTH) : "";
+  const claimToken = typeof body?.claimToken === "string" ? body.claimToken : null;
   const identity = resolveIdentity(req, name);
   if (!identity) {
     return NextResponse.json({ error: "name is required." }, { status: 400 });
   }
 
   const store = getRpsStore();
-  const profile = await store.getOrCreatePlayer(identity);
+
+  let profile: PlayerProfile;
+  if (identity.kind === "wallet") {
+    profile = await store.getOrCreatePlayer(identity);
+  } else {
+    const result = await claimOrLoadNamedProfile(store, identity.name, claimToken);
+    if (result.status === "taken") {
+      return NextResponse.json({ error: TAKEN_ERROR }, { status: 409 });
+    }
+    profile = result.profile;
+  }
 
   const { equippedSkin, equippedAnimation, equippedTitle } = (body ?? {}) as {
     equippedSkin?: unknown;
@@ -54,5 +79,5 @@ export async function POST(req: NextRequest) {
   }
 
   await store.savePlayer(profile);
-  return NextResponse.json({ profile });
+  return NextResponse.json({ profile: toPublicProfile(profile) });
 }

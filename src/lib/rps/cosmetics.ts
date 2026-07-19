@@ -225,6 +225,7 @@ export function createDefaultProfile(name: string): PlayerProfile {
     name,
     walletAddress: null,
     ensName: null,
+    claimToken: null,
     elo: 1000,
     peakElo: 1000,
     wins: 0,

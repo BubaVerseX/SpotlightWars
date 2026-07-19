@@ -1,4 +1,5 @@
 import { getRpsStore } from "@/lib/rps/store";
+import { toPublicProfile } from "@/lib/rps/name-claim";
 import { LeaderboardList } from "@/components/rps/LeaderboardList";
 import { Footer } from "@/components/Footer";
 
@@ -6,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function LeaderboardPage() {
   const store = getRpsStore();
-  const entries = await store.topEloLeaderboard(10);
+  const entries = (await store.topEloLeaderboard(10)).map(toPublicProfile);
 
   return (
     <>

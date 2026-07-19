@@ -5,6 +5,7 @@ export const RPS_REVEAL_EVENT = "rps:reveal";
 export const RPS_REMATCH_EVENT = "rps:rematch";
 
 export const RPS_NAME_STORAGE_KEY = "rps:display-name";
+export const RPS_CLAIM_TOKEN_STORAGE_KEY = "rps:claim-token";
 export const MAX_NAME_LENGTH = 24;
 
 export const COUNTDOWN_SECONDS = 3;

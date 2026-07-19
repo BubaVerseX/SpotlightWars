@@ -52,6 +52,11 @@ export interface RpsStore {
 
   getOrCreatePlayer(identity: PlayerIdentity): Promise<PlayerProfile>;
   savePlayer(profile: PlayerProfile): Promise<void>;
+  /** Read-only lookup for a name-based profile — unlike getOrCreatePlayer,
+   * never creates one. Used for "is this name available" checks, where
+   * merely asking about a name must not have the side effect of claiming
+   * storage for it. */
+  peekNamedProfile(name: string): Promise<PlayerProfile | null>;
   topEloLeaderboard(count: number): Promise<PlayerProfile[]>;
 }
 
@@ -153,6 +158,12 @@ class MemoryRpsStore implements RpsStore {
 
   async savePlayer(profile: PlayerProfile) {
     this.players.set(keyForProfile(profile), structuredClone(profile));
+  }
+
+  async peekNamedProfile(name: string) {
+    const key = keyForIdentity({ kind: "name", name });
+    const existing = this.players.get(key);
+    return existing ? structuredClone(existing) : null;
   }
 
   async topEloLeaderboard(count: number) {
@@ -265,6 +276,12 @@ class KvRpsStore implements RpsStore {
     // which is mutable/ENS-derived for wallet players) so leaderboard reads
     // can fetch the profile directly without re-deriving it from a name.
     await this.redis.zadd(ELO_LEADERBOARD_KEY, { score: profile.elo, member: key });
+  }
+
+  async peekNamedProfile(name: string) {
+    const key = keyForIdentity({ kind: "name", name });
+    const existing = await this.redis.get<PlayerProfile>(key);
+    return existing ?? null;
   }
 
   async topEloLeaderboard(count: number) {

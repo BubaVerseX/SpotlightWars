@@ -4,11 +4,13 @@ import { MAX_NAME_LENGTH } from "@/lib/rps/constants";
 import { AI_DIFFICULTIES } from "@/lib/rps/ai";
 import { ensureVsComputerStats, evaluateAchievements } from "@/lib/rps/cosmetics";
 import { resolveIdentity } from "@/lib/rps/session";
-import type { AiDifficulty } from "@/lib/rps/types";
+import { claimOrLoadNamedProfile, toPublicProfile } from "@/lib/rps/name-claim";
+import type { AiDifficulty, PlayerProfile } from "@/lib/rps/types";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const name = typeof body?.name === "string" ? body.name.trim().slice(0, MAX_NAME_LENGTH) : "";
+  const claimToken = typeof body?.claimToken === "string" ? body.claimToken : null;
   const difficulty = body?.difficulty as AiDifficulty;
   const outcome = body?.outcome;
 
@@ -18,7 +20,21 @@ export async function POST(req: NextRequest) {
   }
 
   const store = getRpsStore();
-  const profile = await store.getOrCreatePlayer(identity);
+
+  let profile: PlayerProfile;
+  if (identity.kind === "wallet") {
+    profile = await store.getOrCreatePlayer(identity);
+  } else {
+    const result = await claimOrLoadNamedProfile(store, identity.name, claimToken);
+    if (result.status === "taken") {
+      return NextResponse.json(
+        { error: "This name is already taken — try another one." },
+        { status: 409 }
+      );
+    }
+    profile = result.profile;
+  }
+
   const stats = ensureVsComputerStats(profile);
 
   if (outcome === "win") {
@@ -32,5 +48,5 @@ export async function POST(req: NextRequest) {
   const newUnlocks = evaluateAchievements(profile);
   await store.savePlayer(profile);
 
-  return NextResponse.json({ profile, newUnlocks });
+  return NextResponse.json({ profile: toPublicProfile(profile), newUnlocks });
 }

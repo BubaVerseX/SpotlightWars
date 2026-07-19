@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPusherServer } from "@/lib/pusher-server";
-import { getRpsStore } from "@/lib/rps/store";
+import { getRpsStore, type RpsStore } from "@/lib/rps/store";
 import {
   MAX_NAME_LENGTH,
   MOVES,
@@ -11,8 +11,21 @@ import {
 import { calculateEloChange, evaluateAchievements } from "@/lib/rps/cosmetics";
 import { decideWinner } from "@/lib/rps/game";
 import { resolveIdentity } from "@/lib/rps/session";
+import { claimOrLoadNamedProfile } from "@/lib/rps/name-claim";
 import { shortenAddress } from "@/lib/rps/wallet";
-import type { MatchStats, Move, PlayerIdentity, RoundRevealPayload } from "@/lib/rps/types";
+import type { MatchStats, MoveEntry, Move, PlayerProfile, RoundRevealPayload } from "@/lib/rps/types";
+
+async function resolveEntryProfile(store: RpsStore, entry: MoveEntry): Promise<PlayerProfile | null> {
+  if (entry.walletAddress) {
+    return store.getOrCreatePlayer({ kind: "wallet", address: entry.walletAddress });
+  }
+  // Anonymous path: verify (not just trust) that this submission still owns
+  // `displayName` before letting it touch that profile's ELO/stats. This
+  // should only ever fail if someone bypasses the name-claim UI entirely
+  // and hits this endpoint directly with a name they don't own.
+  const result = await claimOrLoadNamedProfile(store, entry.displayName, entry.claimToken);
+  return result.status === "ok" ? result.profile : null;
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -36,9 +49,15 @@ export async function POST(req: NextRequest) {
   const displayName =
     identity.kind === "wallet" ? (identity.ensName ?? shortenAddress(identity.address)) : identity.name;
   const walletAddress = identity.kind === "wallet" ? identity.address : null;
+  const claimToken =
+    identity.kind === "wallet"
+      ? null
+      : typeof body?.claimToken === "string"
+        ? body.claimToken
+        : null;
 
   const store = getRpsStore();
-  await store.hsetMove(matchId, memberId, { move, displayName, walletAddress });
+  await store.hsetMove(matchId, memberId, { move, displayName, walletAddress, claimToken });
 
   const moves = await store.getMoves(matchId);
   const memberIds = Object.keys(moves);
@@ -76,50 +95,51 @@ export async function POST(req: NextRequest) {
     const winnerEntry = matchWinnerId === aId ? a : b;
     const loserEntry = matchWinnerId === aId ? b : a;
 
-    const winnerIdentity: PlayerIdentity = winnerEntry.walletAddress
-      ? { kind: "wallet", address: winnerEntry.walletAddress }
-      : { kind: "name", name: winnerEntry.displayName };
-    const loserIdentity: PlayerIdentity = loserEntry.walletAddress
-      ? { kind: "wallet", address: loserEntry.walletAddress }
-      : { kind: "name", name: loserEntry.displayName };
+    const winnerProfile = await resolveEntryProfile(store, winnerEntry);
+    const loserProfile = await resolveEntryProfile(store, loserEntry);
 
-    const winnerProfile = await store.getOrCreatePlayer(winnerIdentity);
-    const loserProfile = await store.getOrCreatePlayer(loserIdentity);
+    // Either identity failing to verify means someone's name-claim doesn't
+    // check out (most likely a stale/forged request bypassing the claim UI
+    // entirely, since the front door already gates this). Skip touching
+    // ELO/stats for BOTH players rather than crediting/debiting the wrong
+    // account — the match itself still completes and broadcasts normally,
+    // just without matchStats, which the client already treats as optional.
+    if (winnerProfile && loserProfile) {
+      const eloBeforeWinner = winnerProfile.elo;
+      const eloBeforeLoser = loserProfile.elo;
+      const { winnerDelta, loserDelta } = calculateEloChange(eloBeforeWinner, eloBeforeLoser);
 
-    const eloBeforeWinner = winnerProfile.elo;
-    const eloBeforeLoser = loserProfile.elo;
-    const { winnerDelta, loserDelta } = calculateEloChange(eloBeforeWinner, eloBeforeLoser);
+      winnerProfile.elo += winnerDelta;
+      winnerProfile.peakElo = Math.max(winnerProfile.peakElo, winnerProfile.elo);
+      winnerProfile.wins += 1;
+      winnerProfile.currentWinStreak += 1;
+      winnerProfile.bestWinStreak = Math.max(winnerProfile.bestWinStreak, winnerProfile.currentWinStreak);
 
-    winnerProfile.elo += winnerDelta;
-    winnerProfile.peakElo = Math.max(winnerProfile.peakElo, winnerProfile.elo);
-    winnerProfile.wins += 1;
-    winnerProfile.currentWinStreak += 1;
-    winnerProfile.bestWinStreak = Math.max(winnerProfile.bestWinStreak, winnerProfile.currentWinStreak);
+      loserProfile.elo += loserDelta;
+      loserProfile.losses += 1;
+      loserProfile.currentWinStreak = 0;
 
-    loserProfile.elo += loserDelta;
-    loserProfile.losses += 1;
-    loserProfile.currentWinStreak = 0;
+      const winnerUnlocks = evaluateAchievements(winnerProfile);
+      const loserUnlocks = evaluateAchievements(loserProfile);
 
-    const winnerUnlocks = evaluateAchievements(winnerProfile);
-    const loserUnlocks = evaluateAchievements(loserProfile);
+      await store.savePlayer(winnerProfile);
+      await store.savePlayer(loserProfile);
 
-    await store.savePlayer(winnerProfile);
-    await store.savePlayer(loserProfile);
-
-    matchStats = {
-      [matchWinnerId]: {
-        name: winnerProfile.name,
-        eloBefore: eloBeforeWinner,
-        eloAfter: winnerProfile.elo,
-        newUnlocks: winnerUnlocks,
-      },
-      [matchLoserId]: {
-        name: loserProfile.name,
-        eloBefore: eloBeforeLoser,
-        eloAfter: loserProfile.elo,
-        newUnlocks: loserUnlocks,
-      },
-    };
+      matchStats = {
+        [matchWinnerId]: {
+          name: winnerProfile.name,
+          eloBefore: eloBeforeWinner,
+          eloAfter: winnerProfile.elo,
+          newUnlocks: winnerUnlocks,
+        },
+        [matchLoserId]: {
+          name: loserProfile.name,
+          eloBefore: eloBeforeLoser,
+          eloAfter: loserProfile.elo,
+          newUnlocks: loserUnlocks,
+        },
+      };
+    }
   }
 
   // Fresh moves + claim guard for the next round (or a future rematch) —

@@ -35,7 +35,7 @@ const AI_NAME_BY_DIFFICULTY: Record<AiDifficulty, string> = {
 };
 
 export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) {
-  const { name } = useRpsIdentity();
+  const { name, claimToken } = useRpsIdentity();
   const router = useRouter();
 
   const [phase, setPhase] = useState<Phase>("countdown");
@@ -72,10 +72,12 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
   useEffect(() => {
     if (!name) return;
     let cancelled = false;
-    fetch(`/api/rps/profile?name=${encodeURIComponent(name)}`)
+    const params = new URLSearchParams({ name });
+    if (claimToken) params.set("claimToken", claimToken);
+    fetch(`/api/rps/profile?${params}`)
       .then((res) => res.json())
       .then((data) => {
-        if (!cancelled) setMyProfile(data.profile);
+        if (!cancelled) setMyProfile(data.profile ?? createDefaultProfile(name));
       })
       .catch(() => {
         if (!cancelled) setMyProfile(createDefaultProfile(name));
@@ -83,7 +85,7 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
     return () => {
       cancelled = true;
     };
-  }, [name]);
+  }, [name, claimToken]);
 
   // Pick the AI's move the moment a round begins, from completed-round
   // history only — the player hasn't chosen anything yet at this point, so
@@ -193,7 +195,12 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
     fetch("/api/rps/vs-computer/result", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, difficulty, outcome: matchOutcome === "win" ? "win" : "loss" }),
+      body: JSON.stringify({
+        name,
+        claimToken,
+        difficulty,
+        outcome: matchOutcome === "win" ? "win" : "loss",
+      }),
     })
       .then((res) => res.json())
       .then((data) => {
@@ -204,7 +211,7 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
         // Best-effort: if this fails the match still played out fine, the
         // player just won't see this particular win reflected in stats.
       });
-  }, [phase, name, matchOutcome, difficulty, resultSaved]);
+  }, [phase, name, claimToken, matchOutcome, difficulty, resultSaved]);
 
   const handleRematch = useCallback(() => {
     setMyMove(null);

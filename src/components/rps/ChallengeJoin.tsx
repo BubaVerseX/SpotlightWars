@@ -6,15 +6,20 @@ import { NameGate } from "./NameGate";
 import { useRpsIdentity } from "@/lib/rps/use-identity";
 
 export function ChallengeJoin({ matchId }: { matchId: string }) {
-  const { name, setName } = useRpsIdentity();
+  const { name, claimName, checkNameAvailability } = useRpsIdentity();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);
 
   const handleJoin = async (chosenName: string) => {
-    setName(chosenName);
-    setJoining(true);
     setError(null);
+    setJoining(true);
+    const claimed = await claimName(chosenName);
+    if (!claimed.ok) {
+      setError(claimed.error);
+      setJoining(false);
+      return;
+    }
     try {
       const res = await fetch(`/api/rps/challenge/${matchId}/join`, {
         method: "POST",
@@ -42,13 +47,10 @@ export function ChallengeJoin({ matchId }: { matchId: string }) {
           submitLabel={joining ? "Joining..." : "Join Match"}
           defaultValue={name}
           disabled={joining}
+          error={error}
+          onCheckAvailability={checkNameAvailability}
         />
       </div>
-      {error && (
-        <p className="text-sm" style={{ color: "var(--neon-magenta)" }}>
-          {error}
-        </p>
-      )}
     </main>
   );
 }

@@ -61,7 +61,7 @@ interface OpponentInfo {
 }
 
 export function MatchRoom({ matchId }: { matchId: string }) {
-  const { name } = useRpsIdentity();
+  const { name, claimToken } = useRpsIdentity();
   const router = useRouter();
 
   const [phase, setPhase] = useState<Phase>("loading");
@@ -101,7 +101,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         await fetch("/api/rps/move", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ matchId, memberId: myMemberIdRef.current, name, move }),
+          body: JSON.stringify({ matchId, memberId: myMemberIdRef.current, name, claimToken, move }),
         });
       } catch {
         // If this fails, the reveal event just never arrives — the round
@@ -109,7 +109,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         // started from the result/disconnect screens.
       }
     },
-    [matchId, name]
+    [matchId, name, claimToken]
   );
 
   // Load (or lazily create) my profile so we know my equipped cosmetics and
@@ -126,7 +126,9 @@ export function MatchRoom({ matchId }: { matchId: string }) {
     (async () => {
       let profile: PlayerProfile;
       try {
-        const res = await fetch(`/api/rps/profile?name=${encodeURIComponent(name)}`);
+        const params = new URLSearchParams({ name });
+        if (claimToken) params.set("claimToken", claimToken);
+        const res = await fetch(`/api/rps/profile?${params}`);
         const data = await res.json();
         profile = data.profile;
       } catch {
@@ -267,7 +269,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
       cancelled = true;
       cleanup?.();
     };
-  }, [matchId, name]);
+  }, [matchId, name, claimToken]);
 
   // Give up on the wait after a while instead of hanging silently forever —
   // covers both an empty random queue and a challenge link nobody opens.
