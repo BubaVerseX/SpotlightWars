@@ -7,16 +7,19 @@ import { getRpsPusherClient, setRpsAuthProfile } from "@/lib/rps/pusher-client";
 import {
   CHOOSE_SECONDS,
   COUNTDOWN_SECONDS,
+  MATCH_INTRO_DURATION_MS,
   MOVES,
   NEXT_ROUND_DELAY_MS,
   QUEUE_WAIT_TIMEOUT_SECONDS,
   REVEAL_DURATION_MS,
   RPS_REMATCH_EVENT,
   RPS_REVEAL_EVENT,
+  RPS_TAUNT_EVENT,
+  TAUNT_DISPLAY_MS,
   rpsMatchChannel,
 } from "@/lib/rps/constants";
 import { useRpsIdentity } from "@/lib/rps/use-identity";
-import { createDefaultProfile, DEFAULT_ANIMATION, DEFAULT_SKIN } from "@/lib/rps/cosmetics";
+import { createDefaultProfile, DEFAULT_ANIMATION, DEFAULT_SKIN, getCosmeticsByCategory } from "@/lib/rps/cosmetics";
 import type { Move, PlayerProfile, RoundRevealPayload } from "@/lib/rps/types";
 import { MoveButton } from "./MoveButton";
 import { RevealStage } from "./RevealStage";
@@ -25,6 +28,9 @@ import { MatchResultBanner } from "./MatchResultBanner";
 import { ScoreTracker } from "./ScoreTracker";
 import { PlayerBadge } from "./PlayerBadge";
 import { VictoryAnimation } from "./VictoryAnimation";
+import { MatchIntroOverlay } from "./MatchIntroOverlay";
+import { TauntBar } from "./TauntBar";
+import { TauntBubble } from "./TauntBubble";
 import { UnlockToast } from "./UnlockToast";
 import { Footer } from "@/components/Footer";
 
@@ -78,10 +84,16 @@ export function MatchRoom({ matchId }: { matchId: string }) {
   const [myProfile, setMyProfile] = useState<PlayerProfile | null>(null);
   const [newUnlocks, setNewUnlocks] = useState<string[]>([]);
   const [roundKey, setRoundKey] = useState(0);
+  const [showIntro, setShowIntro] = useState(false);
+  const [incomingTaunt, setIncomingTaunt] = useState<{ tauntId: string; align: "self" | "opponent"; key: number } | null>(
+    null
+  );
+  const [tauntCooldown, setTauntCooldown] = useState(false);
 
   const myMoveRef = useRef<Move | null>(null);
   const myMemberIdRef = useRef<string | null>(null);
   const phaseRef = useRef<Phase>("loading");
+  const introShownRef = useRef(false);
 
   useEffect(() => {
     myMoveRef.current = myMove;
@@ -110,6 +122,25 @@ export function MatchRoom({ matchId }: { matchId: string }) {
       }
     },
     [matchId, name, claimToken]
+  );
+
+  const handleSendTaunt = useCallback(
+    async (tauntId: string) => {
+      if (!name || !myMemberIdRef.current || tauntCooldown) return;
+      setTauntCooldown(true);
+      setTimeout(() => setTauntCooldown(false), 1500);
+      try {
+        await fetch("/api/rps/taunt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ matchId, memberId: myMemberIdRef.current, name, tauntId }),
+        });
+      } catch {
+        // Purely cosmetic — a dropped taunt just never shows up, no retry
+        // needed.
+      }
+    },
+    [matchId, name, tauntCooldown]
   );
 
   // Load (or lazily create) my profile so we know my equipped cosmetics and
@@ -259,6 +290,11 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         setPhase("countdown");
       });
 
+      channel.bind(RPS_TAUNT_EVENT, (payload: { memberId: string; tauntId: string }) => {
+        const align = payload.memberId === myMemberIdRef.current ? "self" : "opponent";
+        setIncomingTaunt({ tauntId: payload.tauntId, align, key: Date.now() });
+      });
+
       cleanup = () => {
         channel.unbind_all();
         pusher.unsubscribe(channelName);
@@ -280,6 +316,24 @@ export function MatchRoom({ matchId }: { matchId: string }) {
     }, QUEUE_WAIT_TIMEOUT_SECONDS * 1000);
     return () => clearTimeout(timer);
   }, [phase]);
+
+  // Play this player's equipped match-intro flourish exactly once, the
+  // first moment an opponent is actually known — never delays anything
+  // else, since it's a non-blocking overlay that self-dismisses.
+  useEffect(() => {
+    if (!opponentInfo || introShownRef.current) return;
+    introShownRef.current = true;
+    setShowIntro(true);
+    const timer = setTimeout(() => setShowIntro(false), MATCH_INTRO_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [opponentInfo]);
+
+  // Auto-dismiss an incoming taunt bubble.
+  useEffect(() => {
+    if (!incomingTaunt) return;
+    const timer = setTimeout(() => setIncomingTaunt(null), TAUNT_DISPLAY_MS);
+    return () => clearTimeout(timer);
+  }, [incomingTaunt]);
 
   // 3-2-1 countdown before each round.
   useEffect(() => {
@@ -375,6 +429,9 @@ export function MatchRoom({ matchId }: { matchId: string }) {
       : roundWinnerId === opponentMemberId
         ? opponentInfo?.equippedAnimation
         : undefined;
+  const unlockedTaunts = getCosmeticsByCategory("taunt")
+    .filter((c) => myProfile?.unlockedCosmetics.includes(c.id))
+    .map((c) => c.id);
 
   return (
     <>
@@ -489,6 +546,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
             >
               {secondsLeft > 0 ? secondsLeft : "GO"}
             </p>
+            <TauntBar tauntIds={unlockedTaunts} onSend={handleSendTaunt} disabled={tauntCooldown} />
           </div>
         )}
 
@@ -545,7 +603,12 @@ export function MatchRoom({ matchId }: { matchId: string }) {
                   <VictoryAnimation animation={winnerAnimation} />
                 )}
               </div>
-              {phase === "roundResult" && !matchWinnerId && <ResultBanner outcome={roundOutcome} />}
+              {phase === "roundResult" && !matchWinnerId && (
+                <>
+                  <ResultBanner outcome={roundOutcome} />
+                  <TauntBar tauntIds={unlockedTaunts} onSend={handleSendTaunt} disabled={tauntCooldown} />
+                </>
+              )}
             </div>
           )}
 
@@ -574,6 +637,8 @@ export function MatchRoom({ matchId }: { matchId: string }) {
       </main>
       <Footer />
       <UnlockToast cosmeticIds={newUnlocks} onDismiss={() => setNewUnlocks([])} />
+      {showIntro && <MatchIntroOverlay introId={myProfile?.equippedIntro} />}
+      {incomingTaunt && <TauntBubble key={incomingTaunt.key} tauntId={incomingTaunt.tauntId} align={incomingTaunt.align} />}
     </>
   );
 }

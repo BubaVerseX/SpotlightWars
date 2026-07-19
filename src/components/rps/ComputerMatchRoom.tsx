@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   CHOOSE_SECONDS,
   COUNTDOWN_SECONDS,
+  MATCH_INTRO_DURATION_MS,
   MOVES,
   NEXT_ROUND_DELAY_MS,
   REVEAL_DURATION_MS,
@@ -22,6 +23,7 @@ import { ComputerMatchResultBanner } from "./ComputerMatchResultBanner";
 import { ScoreTracker } from "./ScoreTracker";
 import { PlayerBadge } from "./PlayerBadge";
 import { VictoryAnimation } from "./VictoryAnimation";
+import { MatchIntroOverlay } from "./MatchIntroOverlay";
 import { UnlockToast } from "./UnlockToast";
 import { Footer } from "@/components/Footer";
 
@@ -50,12 +52,14 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
   const [newUnlocks, setNewUnlocks] = useState<string[]>([]);
   const [roundKey, setRoundKey] = useState(0);
   const [resultSaved, setResultSaved] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
 
   const myMoveRef = useRef<Move | null>(null);
   const aiMoveRef = useRef<Move | null>(null);
   const historyRef = useRef<Move[]>([]);
   const myScoreRef = useRef(0);
   const aiScoreRef = useRef(0);
+  const introShownRef = useRef(false);
 
   useEffect(() => {
     myMoveRef.current = myMove;
@@ -86,6 +90,16 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
       cancelled = true;
     };
   }, [name, claimToken]);
+
+  // Play this player's equipped match-intro flourish once, as soon as their
+  // profile (and its equippedIntro) is known.
+  useEffect(() => {
+    if (!myProfile || introShownRef.current) return;
+    introShownRef.current = true;
+    setShowIntro(true);
+    const timer = setTimeout(() => setShowIntro(false), MATCH_INTRO_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [myProfile]);
 
   // Pick the AI's move the moment a round begins, from completed-round
   // history only — the player hasn't chosen anything yet at this point, so
@@ -341,6 +355,7 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
       </main>
       <Footer />
       <UnlockToast cosmeticIds={newUnlocks} onDismiss={() => setNewUnlocks([])} />
+      {showIntro && <MatchIntroOverlay introId={myProfile?.equippedIntro} />}
     </>
   );
 }

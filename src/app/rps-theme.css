@@ -326,6 +326,274 @@
   animation: arcade-power-drain 850ms ease-in forwards;
 }
 
+/* --- Victory animations: shockwave / glitch burst / supernova --- */
+
+@keyframes shockwave-ring {
+  0% {
+    transform: scale(0.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(7);
+    opacity: 0;
+  }
+}
+
+.animate-shockwave-ring {
+  animation: shockwave-ring 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes glitch-flicker {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  10%,
+  30%,
+  50% {
+    opacity: 0.35;
+  }
+  20%,
+  40% {
+    opacity: 0.1;
+  }
+}
+
+.animate-glitch-flicker {
+  animation: glitch-flicker 550ms steps(2, end);
+}
+
+@keyframes glitch-bar {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  15% {
+    transform: translateX(-6%);
+    opacity: 0.9;
+  }
+  30% {
+    transform: translateX(4%);
+    opacity: 0.9;
+  }
+  45% {
+    transform: translateX(-3%);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+}
+
+.animate-glitch-bar {
+  animation: glitch-bar 550ms steps(2, end) forwards;
+}
+
+@keyframes supernova-core {
+  0% {
+    transform: scale(0.3);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(3.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(5);
+    opacity: 0;
+  }
+}
+
+.animate-supernova-core {
+  animation: supernova-core 650ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-shadow:
+    0 0 30px #fff,
+    0 0 80px #00f0ff;
+}
+
+@keyframes supernova-flash {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-supernova-flash {
+  animation: supernova-flash 500ms ease-out forwards;
+}
+
+/* --- Profile banners (background shown behind stats/leaderboard rows) --- */
+
+.rps-banner-cyberGrid {
+  background-image:
+    linear-gradient(rgba(0, 240, 255, 0.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.35) 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-color: rgba(0, 240, 255, 0.04);
+  animation: banner-grid-scroll 6s linear infinite;
+}
+
+@keyframes banner-grid-scroll {
+  from {
+    background-position: 0 0, 0 0;
+  }
+  to {
+    background-position: 22px 22px, 22px 22px;
+  }
+}
+
+.rps-banner-magentaPulse {
+  background: radial-gradient(ellipse at center, rgba(255, 46, 230, 0.35) 0%, transparent 70%);
+  animation: banner-pulse 3s ease-in-out infinite;
+}
+
+@keyframes banner-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.rps-banner-goldRush {
+  background-image: repeating-linear-gradient(
+    120deg,
+    rgba(255, 216, 74, 0.25) 0px,
+    rgba(255, 216, 74, 0.25) 8px,
+    transparent 8px,
+    transparent 26px
+  );
+  background-color: rgba(255, 216, 74, 0.03);
+}
+
+.rps-banner-deepVoid {
+  background-color: #030308;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, #fff, transparent),
+    radial-gradient(1px 1px at 80% 40%, #fff, transparent),
+    radial-gradient(1px 1px at 30% 70%, #fff, transparent),
+    radial-gradient(1px 1px at 60% 85%, #fff, transparent),
+    radial-gradient(1px 1px at 90% 15%, #fff, transparent);
+}
+
+.rps-banner-auroraDrift {
+  background: linear-gradient(
+    120deg,
+    rgba(0, 240, 255, 0.3),
+    rgba(255, 46, 230, 0.3),
+    rgba(0, 240, 255, 0.3)
+  );
+  background-size: 200% 200%;
+  animation: banner-aurora-drift 6s ease-in-out infinite;
+}
+
+@keyframes banner-aurora-drift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* --- Match intro flourishes (brief, plays once on entering a room) --- */
+
+@keyframes intro-power-up-flash {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
+.animate-intro-power-up-flash {
+  animation: intro-power-up-flash 1s ease-out forwards;
+}
+
+@keyframes intro-grid-warp {
+  0% {
+    transform: perspective(500px) rotateX(35deg) scale(0.85);
+    opacity: 0;
+  }
+  60% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: perspective(500px) rotateX(0deg) scale(1);
+    opacity: 0;
+  }
+}
+
+.animate-intro-grid-warp {
+  animation: intro-grid-warp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes intro-neon-bootup {
+  0%,
+  20% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  35% {
+    opacity: 0.2;
+  }
+  45% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-intro-neon-bootup {
+  animation: intro-neon-bootup 1.3s steps(1, end) forwards;
+}
+
+/* --- Taunt bubbles --- */
+
+@keyframes taunt-pop {
+  0% {
+    transform: scale(0.5) translateY(6px);
+    opacity: 0;
+  }
+  20% {
+    transform: scale(1.1) translateY(0);
+    opacity: 1;
+  }
+  30% {
+    transform: scale(1) translateY(0);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+}
+
+.animate-taunt-pop {
+  animation: taunt-pop 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* --- Achievement / cosmetic unlock toast --- */
 
 .arcade-toast {

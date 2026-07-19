@@ -1,15 +1,13 @@
 import type { AiDifficulty, PlayerProfile, VsComputerStats } from "./types";
 import { shortenAddress } from "./wallet";
 
-export type CosmeticCategory = "skin" | "animation" | "title";
+export type CosmeticCategory = "skin" | "animation" | "title" | "banner" | "intro" | "taunt";
 
 export interface CosmeticDefinition {
   id: string;
   category: CosmeticCategory;
   name: string;
   description: string;
-  /** Free unlocks today; keeping the field lets a paid tier slot in later
-   * without restructuring the cosmetic or player data. */
   unlockMethod: "achievement" | "purchase";
   achievementId?: string;
   /** Only set for "title" cosmetics — recolors the player's name. */
@@ -87,6 +85,43 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     metric: "vsComputerWin",
     target: 1,
     vsComputerDifficulty: "impossible",
+  },
+  {
+    id: "beat-easy-ai",
+    name: "Warm-Up",
+    description: "Beat the Easy AI in practice mode",
+    metric: "vsComputerWin",
+    target: 1,
+    vsComputerDifficulty: "easy",
+  },
+  {
+    id: "beat-medium-ai",
+    name: "Getting Serious",
+    description: "Beat the Medium AI in practice mode",
+    metric: "vsComputerWin",
+    target: 1,
+    vsComputerDifficulty: "medium",
+  },
+  {
+    id: "ten-streak",
+    name: "Unstoppable",
+    description: "Win 10 matches in a row",
+    metric: "winStreak",
+    target: 10,
+  },
+  {
+    id: "thirty-wins",
+    name: "Champion",
+    description: "Win 30 matches",
+    metric: "matchWins",
+    target: 30,
+  },
+  {
+    id: "elo-1500",
+    name: "Transcendent",
+    description: "Reach 1500 ELO",
+    metric: "eloReached",
+    target: 1500,
   },
 ];
 
@@ -192,6 +227,166 @@ export const COSMETICS: CosmeticDefinition[] = [
     achievementId: "beat-impossible-ai",
     color: "#39ff88",
   },
+
+  // --- Skins (purchase/achievement mix) ---
+  {
+    id: "skin:chrome",
+    category: "skin",
+    name: "Chrome",
+    description: "Polished metallic hands with a hard specular highlight.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "skin:plasma",
+    category: "skin",
+    name: "Plasma",
+    description: "Superheated gradient hands with a soft plasma glow.",
+    unlockMethod: "achievement",
+    achievementId: "beat-medium-ai",
+  },
+  {
+    id: "skin:wireframe",
+    category: "skin",
+    name: "Wireframe",
+    description: "Faceted 3D wireframe hands, CAD-viewport style.",
+    unlockMethod: "purchase",
+  },
+
+  // --- Victory animations ---
+  {
+    id: "animation:shockwave",
+    category: "animation",
+    name: "Shockwave",
+    description: "A concussive ring blasts out from your winning hand.",
+    unlockMethod: "achievement",
+    achievementId: "ten-streak",
+  },
+  {
+    id: "animation:glitchBurst",
+    category: "animation",
+    name: "Glitch Burst",
+    description: "The screen glitches and tears for a beat on your win.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "animation:supernova",
+    category: "animation",
+    name: "Supernova",
+    description: "Your win detonates the screen in a blinding white-out.",
+    unlockMethod: "achievement",
+    achievementId: "elo-1500",
+  },
+
+  // --- Profile banners (shown behind stats on profile + leaderboard row) ---
+  {
+    id: "banner:cyberGrid",
+    category: "banner",
+    name: "Cyber Grid",
+    description: "A scrolling cyan grid horizon.",
+    unlockMethod: "achievement",
+    achievementId: "first-win",
+  },
+  {
+    id: "banner:magentaPulse",
+    category: "banner",
+    name: "Magenta Pulse",
+    description: "A slow-breathing magenta radial glow.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "banner:goldRush",
+    category: "banner",
+    name: "Gold Rush",
+    description: "Diagonal gold streaks for players who've made it.",
+    unlockMethod: "achievement",
+    achievementId: "elo-1300",
+  },
+  {
+    id: "banner:deepVoid",
+    category: "banner",
+    name: "Deep Void",
+    description: "A near-black starfield with a faint drift.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "banner:auroraDrift",
+    category: "banner",
+    name: "Aurora Drift",
+    description: "Slow-shifting cyan-to-magenta aurora bands.",
+    unlockMethod: "purchase",
+  },
+
+  // --- Match intro animations (brief, plays once entering a match room) ---
+  {
+    id: "intro:powerUpFlash",
+    category: "intro",
+    name: "Power-Up Flash",
+    description: "A quick white flash and scale-in as the room loads.",
+    unlockMethod: "achievement",
+    achievementId: "beat-easy-ai",
+  },
+  {
+    id: "intro:gridWarp",
+    category: "intro",
+    name: "Grid Warp",
+    description: "The floor grid warps and snaps into place.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "intro:neonBootup",
+    category: "intro",
+    name: "Neon Bootup",
+    description: "Your name flickers on like a neon sign powering up.",
+    unlockMethod: "achievement",
+    achievementId: "five-wins",
+  },
+
+  // --- Taunts (quick reactions between rounds — purely visual, no effect) ---
+  {
+    id: "taunt:ggwp",
+    category: "taunt",
+    name: "GG",
+    description: "Good game.",
+    unlockMethod: "achievement",
+    achievementId: "first-win",
+  },
+  {
+    id: "taunt:fire",
+    category: "taunt",
+    name: "🔥",
+    description: "You're on fire.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "taunt:tilted",
+    category: "taunt",
+    name: "😤",
+    description: "A little frustrated.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "taunt:laughing",
+    category: "taunt",
+    name: "😂",
+    description: "That was funny.",
+    unlockMethod: "achievement",
+    achievementId: "three-streak",
+  },
+  {
+    id: "taunt:watchThis",
+    category: "taunt",
+    name: "👀",
+    description: "Watch this.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "taunt:destroyed",
+    category: "taunt",
+    name: "💀",
+    description: "Reserved for the truly dominant.",
+    unlockMethod: "achievement",
+    achievementId: "thirty-wins",
+  },
 ];
 
 export function getCosmetic(id: string | null | undefined): CosmeticDefinition | undefined {
@@ -220,7 +415,14 @@ export function ensureVsComputerStats(profile: PlayerProfile): VsComputerStats {
 }
 
 export function createDefaultProfile(name: string): PlayerProfile {
-  const alwaysUnlocked = COSMETICS.filter((c) => !c.achievementId).map((c) => c.id);
+  // Only the *base* achievement-tier cosmetics (no specific achievement
+  // gating them, e.g. the starting hand skin) come free. Purchase-tier
+  // cosmetics also lack an achievementId — they're gated by price, not
+  // progress — so this must check unlockMethod too, or every paid item
+  // would be handed out for free to every new profile.
+  const alwaysUnlocked = COSMETICS.filter((c) => c.unlockMethod === "achievement" && !c.achievementId).map(
+    (c) => c.id
+  );
   return {
     name,
     walletAddress: null,
@@ -236,6 +438,8 @@ export function createDefaultProfile(name: string): PlayerProfile {
     equippedSkin: DEFAULT_SKIN,
     equippedAnimation: DEFAULT_ANIMATION,
     equippedTitle: null,
+    equippedBanner: null,
+    equippedIntro: null,
     achievementProgress: {},
     vsComputer: createEmptyVsComputerStats(),
   };

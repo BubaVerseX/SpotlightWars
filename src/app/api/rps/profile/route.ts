@@ -51,10 +51,12 @@ export async function POST(req: NextRequest) {
     profile = result.profile;
   }
 
-  const { equippedSkin, equippedAnimation, equippedTitle } = (body ?? {}) as {
+  const { equippedSkin, equippedAnimation, equippedTitle, equippedBanner, equippedIntro } = (body ?? {}) as {
     equippedSkin?: unknown;
     equippedAnimation?: unknown;
     equippedTitle?: unknown;
+    equippedBanner?: unknown;
+    equippedIntro?: unknown;
   };
 
   if (typeof equippedSkin === "string") {
@@ -76,6 +78,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "That title isn't unlocked yet." }, { status: 400 });
     }
     profile.equippedTitle = equippedTitle;
+  }
+
+  if (equippedBanner === null || typeof equippedBanner === "string") {
+    if (equippedBanner !== null && !profile.unlockedCosmetics.includes(equippedBanner)) {
+      return NextResponse.json({ error: "That banner isn't unlocked yet." }, { status: 400 });
+    }
+    profile.equippedBanner = equippedBanner;
+  }
+
+  if (equippedIntro === null || typeof equippedIntro === "string") {
+    if (equippedIntro !== null && !profile.unlockedCosmetics.includes(equippedIntro)) {
+      return NextResponse.json({ error: "That intro isn't unlocked yet." }, { status: 400 });
+    }
+    profile.equippedIntro = equippedIntro;
   }
 
   await store.savePlayer(profile);

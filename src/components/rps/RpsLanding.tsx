@@ -145,6 +145,10 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
             <Link href="/profile" className="underline-offset-2 hover:text-accent hover:underline">
               View profile &amp; cosmetics
             </Link>
+            <span>·</span>
+            <Link href="/shop" className="underline-offset-2 hover:text-accent hover:underline">
+              Shop
+            </Link>
             {!isWalletVerified && (
               <>
                 <span>·</span>

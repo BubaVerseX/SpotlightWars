@@ -3,6 +3,7 @@ import type { Move } from "./types";
 export const RPS_CHANNEL_PREFIX = "presence-rps-match-";
 export const RPS_REVEAL_EVENT = "rps:reveal";
 export const RPS_REMATCH_EVENT = "rps:rematch";
+export const RPS_TAUNT_EVENT = "rps:taunt";
 
 export const RPS_NAME_STORAGE_KEY = "rps:display-name";
 export const RPS_CLAIM_TOKEN_STORAGE_KEY = "rps:claim-token";
@@ -16,6 +17,12 @@ export const ROUNDS_TO_WIN = 2;
 /** How long to wait in the random-matchmaking queue before giving up and
  * showing "no opponents found" instead of hanging silently forever. */
 export const QUEUE_WAIT_TIMEOUT_SECONDS = 40;
+
+/** How long a taunt bubble stays on screen before fading out. */
+export const TAUNT_DISPLAY_MS = 2200;
+/** How long a match-intro flourish plays before the room settles into its
+ * normal state — kept short by design so it never delays match start. */
+export const MATCH_INTRO_DURATION_MS = 1400;
 
 export function rpsMatchChannel(matchId: string): string {
   return `${RPS_CHANNEL_PREFIX}${matchId}`;

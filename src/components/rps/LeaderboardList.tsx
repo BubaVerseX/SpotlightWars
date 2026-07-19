@@ -1,5 +1,6 @@
 import type { PublicPlayerProfile } from "@/lib/rps/types";
 import { getCosmetic, getRankTier } from "@/lib/rps/cosmetics";
+import { BannerPreview } from "./BannerPreview";
 
 export function LeaderboardList({ entries }: { entries: PublicPlayerProfile[] }) {
   if (entries.length === 0) {
@@ -15,7 +16,7 @@ export function LeaderboardList({ entries }: { entries: PublicPlayerProfile[] })
         return (
           <li
             key={entry.name}
-            className={`flex items-center justify-between gap-3 rounded-lg px-4 py-2 text-sm ${
+            className={`overflow-hidden rounded-lg text-sm ${
               isTop ? "arcade-panel" : "border border-border bg-background-elevated"
             }`}
             style={
@@ -24,49 +25,54 @@ export function LeaderboardList({ entries }: { entries: PublicPlayerProfile[] })
                 : undefined
             }
           >
-            <span className="flex min-w-0 items-center gap-3">
-              <span
-                className="w-5 shrink-0 text-right font-display"
-                style={{ color: isTop ? "var(--neon-gold)" : "var(--muted)" }}
-              >
-                {i + 1}
-              </span>
-              <span className="min-w-0 truncate">
+            <BannerPreview
+              bannerId={entry.equippedBanner}
+              className="flex items-center justify-between gap-3 px-4 py-2"
+            >
+              <span className="flex min-w-0 items-center gap-3">
                 <span
-                  className="truncate font-medium"
-                  style={{ color: title?.color ?? "var(--foreground)" }}
+                  className="w-5 shrink-0 text-right font-display"
+                  style={{ color: isTop ? "var(--neon-gold)" : "var(--muted)" }}
                 >
-                  {entry.name}
+                  {i + 1}
                 </span>
-                {entry.walletAddress && (
+                <span className="min-w-0 truncate">
                   <span
-                    className="ml-1.5 text-xs"
-                    style={{ color: "var(--neon-cyan)" }}
-                    title="Verified wallet — signed in with Ethereum"
+                    className="truncate font-medium"
+                    style={{ color: title?.color ?? "var(--foreground)" }}
                   >
-                    ✓
+                    {entry.name}
                   </span>
-                )}
-                {title && <span className="ml-1.5 text-xs text-muted">&ldquo;{title.name}&rdquo;</span>}
+                  {entry.walletAddress && (
+                    <span
+                      className="ml-1.5 text-xs"
+                      style={{ color: "var(--neon-cyan)" }}
+                      title="Verified wallet — signed in with Ethereum"
+                    >
+                      ✓
+                    </span>
+                  )}
+                  {title && <span className="ml-1.5 text-xs text-muted">&ldquo;{title.name}&rdquo;</span>}
+                </span>
+                <span
+                  className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                  style={{ color: tier.color, borderColor: `${tier.color}66`, borderWidth: 1 }}
+                >
+                  {tier.name}
+                </span>
               </span>
-              <span
-                className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-                style={{ color: tier.color, borderColor: `${tier.color}66`, borderWidth: 1 }}
-              >
-                {tier.name}
+              <span className="shrink-0 text-right">
+                <span
+                  className="font-display"
+                  style={{ color: isTop ? "var(--neon-gold)" : "var(--neon-cyan)" }}
+                >
+                  {entry.elo}
+                </span>
+                <span className="ml-2 text-xs text-muted">
+                  {entry.wins}-{entry.losses}
+                </span>
               </span>
-            </span>
-            <span className="shrink-0 text-right">
-              <span
-                className="font-display"
-                style={{ color: isTop ? "var(--neon-gold)" : "var(--neon-cyan)" }}
-              >
-                {entry.elo}
-              </span>
-              <span className="ml-2 text-xs text-muted">
-                {entry.wins}-{entry.losses}
-              </span>
-            </span>
+            </BannerPreview>
           </li>
         );
       })}

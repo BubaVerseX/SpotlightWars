@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { NameGate } from "./NameGate";
 import { WalletConnect } from "./WalletConnect";
+import { BannerPreview } from "./BannerPreview";
 import { useRpsIdentity } from "@/lib/rps/use-identity";
 import type { PlayerProfile } from "@/lib/rps/types";
 import {
@@ -68,7 +69,7 @@ export function ProfilePage() {
   };
 
   const equip = async (
-    field: "equippedSkin" | "equippedAnimation" | "equippedTitle",
+    field: "equippedSkin" | "equippedAnimation" | "equippedTitle" | "equippedBanner" | "equippedIntro",
     value: string | null
   ) => {
     if (!name) return;
@@ -124,13 +125,19 @@ export function ProfilePage() {
   return (
     <>
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-16">
-        <div className="arcade-panel rounded-lg p-6 text-center">
-          <Link
-            href="/"
-            className="text-xs text-muted underline-offset-2 hover:text-[var(--neon-cyan)] hover:underline"
-          >
-            &larr; Back to Rock Paper Scissors
-          </Link>
+        <BannerPreview bannerId={profile.equippedBanner} className="arcade-panel rounded-lg p-6 text-center">
+          <div className="flex items-center justify-center gap-3 text-xs">
+            <Link
+              href="/"
+              className="text-muted underline-offset-2 hover:text-[var(--neon-cyan)] hover:underline"
+            >
+              &larr; Back to Rock Paper Scissors
+            </Link>
+            <span className="text-muted">·</span>
+            <Link href="/shop" className="text-muted underline-offset-2 hover:text-[var(--neon-cyan)] hover:underline">
+              Visit the Shop
+            </Link>
+          </div>
           <p className="mt-4 text-xs uppercase tracking-[0.3em] text-muted">Player Card</p>
           <h1
             className="mt-2 font-display text-3xl font-bold uppercase tracking-wide"
@@ -156,7 +163,7 @@ export function ProfilePage() {
           <div className="mt-4 flex justify-center">
             <WalletConnect isWalletVerified={isWalletVerified} walletAddress={walletAddress} onChange={refreshSession} />
           </div>
-        </div>
+        </BannerPreview>
 
         <div className="grid grid-cols-3 gap-3 text-center">
           <Stat label="ELO" value={profile.elo} color="var(--neon-cyan)" />
@@ -210,6 +217,47 @@ export function ProfilePage() {
           onEquip={(id) => equip("equippedTitle", id)}
           allowNone
         />
+        <CosmeticSection
+          title="Profile Banner"
+          category="banner"
+          equipped={profile.equippedBanner}
+          unlocked={profile.unlockedCosmetics}
+          onEquip={(id) => equip("equippedBanner", id)}
+          allowNone
+        />
+        <CosmeticSection
+          title="Match Intro"
+          category="intro"
+          equipped={profile.equippedIntro}
+          unlocked={profile.unlockedCosmetics}
+          onEquip={(id) => equip("equippedIntro", id)}
+          allowNone
+        />
+
+        <div>
+          <p className="mb-3 text-center text-xs uppercase tracking-[0.3em] text-muted">
+            Taunts — usable between rounds in any match
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {getCosmeticsByCategory("taunt").map((taunt) => {
+              const isUnlocked = profile.unlockedCosmetics.includes(taunt.id);
+              return (
+                <span
+                  key={taunt.id}
+                  title={taunt.description}
+                  className={`rounded-lg border px-3 py-2 font-display text-sm ${
+                    isUnlocked
+                      ? "border-border bg-background-elevated"
+                      : "border-border bg-background-elevated opacity-40"
+                  }`}
+                >
+                  {taunt.name}
+                  {!isUnlocked && <span className="ml-1">🔒</span>}
+                </span>
+              );
+            })}
+          </div>
+        </div>
 
         <div>
           <p

@@ -57,6 +57,12 @@ export interface PlayerProfile {
   equippedSkin: string;
   equippedAnimation: string;
   equippedTitle: string | null;
+  /** Background shown behind the player's stats on their profile/leaderboard
+   * row. `null` means no banner (the plain default background). */
+  equippedBanner: string | null;
+  /** Brief flourish played when this player enters a match room. `null`
+   * means no intro (the room just appears, as it always used to). */
+  equippedIntro: string | null;
   achievementProgress: Record<string, number>;
   vsComputer: VsComputerStats;
 }
