@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { NameGate } from "./NameGate";
-import { useRpsName } from "@/lib/rps/use-name";
+import { WalletConnect } from "./WalletConnect";
+import { useRpsIdentity } from "@/lib/rps/use-identity";
 import type { PlayerProfile } from "@/lib/rps/types";
 import {
   ACHIEVEMENTS,
@@ -22,7 +23,8 @@ const DIFFICULTY_COLOR: Record<string, string> = {
 };
 
 export function ProfilePage() {
-  const { name, setName } = useRpsName();
+  const { name, setName, loading: identityLoading, isWalletVerified, walletAddress, refreshSession } =
+    useRpsIdentity();
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,9 +56,17 @@ export function ProfilePage() {
     }
   };
 
+  if (identityLoading) {
+    return (
+      <main className="flex flex-1 items-center justify-center px-6 py-16">
+        <p className="text-muted">Loading...</p>
+      </main>
+    );
+  }
+
   if (!name) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-10 px-6 py-16">
+      <main className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-16">
         <div className="arcade-panel w-full max-w-sm rounded-lg p-6">
           <NameGate
             title="Your Profile"
@@ -65,6 +75,8 @@ export function ProfilePage() {
             submitLabel="View Profile"
           />
         </div>
+        <p className="text-xs uppercase tracking-[0.3em] text-muted">or</p>
+        <WalletConnect isWalletVerified={isWalletVerified} walletAddress={walletAddress} onChange={refreshSession} />
       </main>
     );
   }
@@ -102,6 +114,9 @@ export function ProfilePage() {
           >
             {tier.name}
           </p>
+          <div className="mt-4 flex justify-center">
+            <WalletConnect isWalletVerified={isWalletVerified} walletAddress={walletAddress} onChange={refreshSession} />
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-3 text-center">

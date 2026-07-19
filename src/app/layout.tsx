@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Orbitron } from "next/font/google";
 import "./globals.css";
 import "./rps-theme.css";
+import { WalletProvider } from "@/components/providers/WalletProvider";
 
 const orbitron = Orbitron({
   variable: "--font-orbitron",
@@ -39,7 +40,9 @@ export default function RootLayout({
       <body className="rps-theme relative flex min-h-full flex-1 flex-col antialiased">
         <div className="rps-grid-bg" aria-hidden="true" />
         <div className="rps-scanlines" aria-hidden="true" />
-        <div className="relative z-10 flex flex-1 flex-col">{children}</div>
+        <WalletProvider>
+          <div className="relative z-10 flex flex-1 flex-col">{children}</div>
+        </WalletProvider>
       </body>
     </html>
   );

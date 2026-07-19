@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { NameGate } from "./NameGate";
-import { useRpsName } from "@/lib/rps/use-name";
+import { useRpsIdentity } from "@/lib/rps/use-identity";
 
 export function ChallengeJoin({ matchId }: { matchId: string }) {
-  const { name, setName } = useRpsName();
+  const { name, setName } = useRpsIdentity();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);

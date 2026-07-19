@@ -7,7 +7,8 @@ import { NameGate } from "./NameGate";
 import { LeaderboardList } from "./LeaderboardList";
 import { PlayerBadge } from "./PlayerBadge";
 import { DifficultyPicker } from "./DifficultyPicker";
-import { useRpsName } from "@/lib/rps/use-name";
+import { WalletConnect } from "./WalletConnect";
+import { useRpsIdentity } from "@/lib/rps/use-identity";
 import type { AiDifficulty, PlayerProfile } from "@/lib/rps/types";
 import { Footer } from "@/components/Footer";
 
@@ -18,7 +19,7 @@ interface RpsLandingProps {
 type Panel = "menu" | "challengeLink" | "difficultyPicker";
 
 export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
-  const { name, setName } = useRpsName();
+  const { name, setName, loading, isWalletVerified, walletAddress, refreshSession } = useRpsIdentity();
   const router = useRouter();
   const [busy, setBusy] = useState<"queue" | "challenge" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,15 +77,25 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
     router.push(`/computer/${difficulty}`);
   };
 
+  if (loading) {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center px-6 py-16">
+        <p className="text-muted">Loading...</p>
+      </main>
+    );
+  }
+
   if (!name) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-10 px-6 py-16">
+      <main className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-16">
         <NameGate
           title="Rock Paper Scissors"
           subtitle="Pick a name. Everyone will see it when they play you."
           onSubmit={setName}
           submitLabel="Let's go"
         />
+        <p className="text-xs uppercase tracking-[0.3em] text-muted">or</p>
+        <WalletConnect isWalletVerified={isWalletVerified} walletAddress={walletAddress} onChange={refreshSession} />
       </main>
     );
   }
@@ -99,6 +110,8 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
             View profile &amp; cosmetics
           </Link>
         </div>
+
+        <WalletConnect isWalletVerified={isWalletVerified} walletAddress={walletAddress} onChange={refreshSession} />
 
         {panel === "menu" && (
           <div className="flex w-full max-w-sm flex-col gap-3">

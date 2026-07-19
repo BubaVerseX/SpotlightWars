@@ -14,7 +14,7 @@ import {
   RPS_REVEAL_EVENT,
   rpsMatchChannel,
 } from "@/lib/rps/constants";
-import { useRpsName } from "@/lib/rps/use-name";
+import { useRpsIdentity } from "@/lib/rps/use-identity";
 import { createDefaultProfile, DEFAULT_ANIMATION, DEFAULT_SKIN } from "@/lib/rps/cosmetics";
 import type { Move, PlayerProfile, RoundRevealPayload } from "@/lib/rps/types";
 import { MoveButton } from "./MoveButton";
@@ -59,7 +59,7 @@ interface OpponentInfo {
 }
 
 export function MatchRoom({ matchId }: { matchId: string }) {
-  const { name } = useRpsName();
+  const { name } = useRpsIdentity();
   const router = useRouter();
 
   const [phase, setPhase] = useState<Phase>("loading");

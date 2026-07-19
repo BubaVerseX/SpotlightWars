@@ -10,7 +10,9 @@ import {
 } from "@/lib/rps/constants";
 import { calculateEloChange, evaluateAchievements } from "@/lib/rps/cosmetics";
 import { decideWinner } from "@/lib/rps/game";
-import type { MatchStats, Move, RoundRevealPayload } from "@/lib/rps/types";
+import { resolveIdentity } from "@/lib/rps/session";
+import { shortenAddress } from "@/lib/rps/wallet";
+import type { MatchStats, Move, PlayerIdentity, RoundRevealPayload } from "@/lib/rps/types";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -23,8 +25,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid move submission." }, { status: 400 });
   }
 
+  // Resolved here, at the moment THIS player submits their own move, because
+  // this is the only point where we have access to their own request/cookies
+  // — a verified wallet session always wins over the client-supplied name,
+  // never the other way around (see resolveIdentity).
+  const identity = resolveIdentity(req, name);
+  if (!identity) {
+    return NextResponse.json({ error: "Invalid move submission." }, { status: 400 });
+  }
+  const displayName =
+    identity.kind === "wallet" ? (identity.ensName ?? shortenAddress(identity.address)) : identity.name;
+  const walletAddress = identity.kind === "wallet" ? identity.address : null;
+
   const store = getRpsStore();
-  await store.hsetMove(matchId, memberId, { name, move });
+  await store.hsetMove(matchId, memberId, { move, displayName, walletAddress });
 
   const moves = await store.getMoves(matchId);
   const memberIds = Object.keys(moves);
@@ -62,8 +76,15 @@ export async function POST(req: NextRequest) {
     const winnerEntry = matchWinnerId === aId ? a : b;
     const loserEntry = matchWinnerId === aId ? b : a;
 
-    const winnerProfile = await store.getOrCreatePlayer(winnerEntry.name);
-    const loserProfile = await store.getOrCreatePlayer(loserEntry.name);
+    const winnerIdentity: PlayerIdentity = winnerEntry.walletAddress
+      ? { kind: "wallet", address: winnerEntry.walletAddress }
+      : { kind: "name", name: winnerEntry.displayName };
+    const loserIdentity: PlayerIdentity = loserEntry.walletAddress
+      ? { kind: "wallet", address: loserEntry.walletAddress }
+      : { kind: "name", name: loserEntry.displayName };
+
+    const winnerProfile = await store.getOrCreatePlayer(winnerIdentity);
+    const loserProfile = await store.getOrCreatePlayer(loserIdentity);
 
     const eloBeforeWinner = winnerProfile.elo;
     const eloBeforeLoser = loserProfile.elo;

@@ -1,6 +1,6 @@
 import { kv } from "@vercel/kv";
-import { createDefaultProfile } from "./cosmetics";
-import type { MoveEntry, PlayerProfile } from "./types";
+import { createDefaultProfile, createDefaultWalletProfile } from "./cosmetics";
+import type { MoveEntry, PlayerIdentity, PlayerProfile } from "./types";
 
 function movesKey(matchId: string): string {
   return `rps:match:${matchId}:moves`;
@@ -10,8 +10,26 @@ function scoreKey(matchId: string): string {
   return `rps:match:${matchId}:score`;
 }
 
-function playerKey(name: string): string {
-  return `rps:player:${name}`;
+/** The canonical storage key for an identity. Wallet and name-based players
+ * live in entirely separate key namespaces (see PlayerIdentity) — this is
+ * the single place that decides which. */
+function keyForIdentity(identity: PlayerIdentity): string {
+  return identity.kind === "wallet"
+    ? `rps:player:wallet:${identity.address.toLowerCase()}`
+    : `rps:player:${identity.name}`;
+}
+
+/** Same derivation, but from an already-loaded profile rather than a fresh
+ * identity — used when saving, since a profile's wallet-ness is exactly its
+ * `walletAddress` field. */
+function keyForProfile(profile: PlayerProfile): string {
+  return profile.walletAddress ? `rps:player:wallet:${profile.walletAddress}` : `rps:player:${profile.name}`;
+}
+
+function createProfileForIdentity(identity: PlayerIdentity): PlayerProfile {
+  return identity.kind === "wallet"
+    ? createDefaultWalletProfile(identity.address, identity.ensName ?? null)
+    : createDefaultProfile(identity.name);
 }
 
 const ELO_LEADERBOARD_KEY = "rps:leaderboard:elo";
@@ -32,7 +50,7 @@ export interface RpsStore {
   getMatchScore(matchId: string): Promise<Record<string, number>>;
   clearMatchScore(matchId: string): Promise<void>;
 
-  getOrCreatePlayer(name: string): Promise<PlayerProfile>;
+  getOrCreatePlayer(identity: PlayerIdentity): Promise<PlayerProfile>;
   savePlayer(profile: PlayerProfile): Promise<void>;
   topEloLeaderboard(count: number): Promise<PlayerProfile[]>;
 }
@@ -124,16 +142,17 @@ class MemoryRpsStore implements RpsStore {
     this.matchScores.delete(scoreKey(matchId));
   }
 
-  async getOrCreatePlayer(name: string) {
-    const existing = this.players.get(name);
+  async getOrCreatePlayer(identity: PlayerIdentity) {
+    const key = keyForIdentity(identity);
+    const existing = this.players.get(key);
     if (existing) return structuredClone(existing);
-    const fresh = createDefaultProfile(name);
-    this.players.set(name, structuredClone(fresh));
+    const fresh = createProfileForIdentity(identity);
+    this.players.set(key, structuredClone(fresh));
     return structuredClone(fresh);
   }
 
   async savePlayer(profile: PlayerProfile) {
-    this.players.set(profile.name, structuredClone(profile));
+    this.players.set(keyForProfile(profile), structuredClone(profile));
   }
 
   async topEloLeaderboard(count: number) {
@@ -204,26 +223,45 @@ class KvRpsStore implements RpsStore {
     await kv.del(scoreKey(matchId));
   }
 
-  private async getPlayerRaw(name: string) {
-    return await kv.get<PlayerProfile>(playerKey(name));
-  }
-
-  async getOrCreatePlayer(name: string) {
-    const existing = await this.getPlayerRaw(name);
+  async getOrCreatePlayer(identity: PlayerIdentity) {
+    const key = keyForIdentity(identity);
+    const existing = await kv.get<PlayerProfile>(key);
     if (existing) return existing;
-    const fresh = createDefaultProfile(name);
+    const fresh = createProfileForIdentity(identity);
     await this.savePlayer(fresh);
     return fresh;
   }
 
   async savePlayer(profile: PlayerProfile) {
-    await kv.set(playerKey(profile.name), profile);
-    await kv.zadd(ELO_LEADERBOARD_KEY, { score: profile.elo, member: profile.name });
+    const key = keyForProfile(profile);
+    await kv.set(key, profile);
+    // The sorted-set member is the full storage key (not the display name,
+    // which is mutable/ENS-derived for wallet players) so leaderboard reads
+    // can fetch the profile directly without re-deriving it from a name.
+    await kv.zadd(ELO_LEADERBOARD_KEY, { score: profile.elo, member: key });
   }
 
   async topEloLeaderboard(count: number) {
-    const names = await kv.zrange<string[]>(ELO_LEADERBOARD_KEY, 0, count - 1, { rev: true });
-    const profiles = await Promise.all(names.map((n) => this.getPlayerRaw(n)));
+    const members = await kv.zrange<string[]>(ELO_LEADERBOARD_KEY, 0, count - 1, { rev: true });
+    const profiles = await Promise.all(
+      members.map(async (member) => {
+        const direct = await kv.get<PlayerProfile>(member);
+        if (direct) return direct;
+
+        // Back-compat: entries written before the wallet-identity storage
+        // rework used the bare display name as the sorted-set member
+        // instead of the full storage key. Re-derive the real key, and if
+        // it resolves, heal the sorted set so future reads take the fast
+        // path above.
+        const legacyKey = `rps:player:${member}`;
+        const legacy = await kv.get<PlayerProfile>(legacyKey);
+        if (legacy) {
+          await kv.zadd(ELO_LEADERBOARD_KEY, { score: legacy.elo, member: legacyKey });
+          await kv.zrem(ELO_LEADERBOARD_KEY, member);
+        }
+        return legacy;
+      })
+    );
     return profiles.filter((p): p is PlayerProfile => p !== null);
   }
 }

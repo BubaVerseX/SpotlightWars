@@ -38,6 +38,15 @@ export function LeaderboardList({ entries }: { entries: PlayerProfile[] }) {
                 >
                   {entry.name}
                 </span>
+                {entry.walletAddress && (
+                  <span
+                    className="ml-1.5 text-xs"
+                    style={{ color: "var(--neon-cyan)" }}
+                    title="Verified wallet — signed in with Ethereum"
+                  >
+                    ✓
+                  </span>
+                )}
                 {title && <span className="ml-1.5 text-xs text-muted">&ldquo;{title.name}&rdquo;</span>}
               </span>
               <span

@@ -1,27 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRpsStore } from "@/lib/rps/store";
 import { MAX_NAME_LENGTH } from "@/lib/rps/constants";
+import { resolveIdentity } from "@/lib/rps/session";
 
 export async function GET(req: NextRequest) {
   const name = req.nextUrl.searchParams.get("name")?.trim().slice(0, MAX_NAME_LENGTH) ?? "";
-  if (!name) {
+  const identity = resolveIdentity(req, name);
+  if (!identity) {
     return NextResponse.json({ error: "name is required." }, { status: 400 });
   }
 
   const store = getRpsStore();
-  const profile = await store.getOrCreatePlayer(name);
+  const profile = await store.getOrCreatePlayer(identity);
   return NextResponse.json({ profile });
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const name = typeof body?.name === "string" ? body.name.trim().slice(0, MAX_NAME_LENGTH) : "";
-  if (!name) {
+  const identity = resolveIdentity(req, name);
+  if (!identity) {
     return NextResponse.json({ error: "name is required." }, { status: 400 });
   }
 
   const store = getRpsStore();
-  const profile = await store.getOrCreatePlayer(name);
+  const profile = await store.getOrCreatePlayer(identity);
 
   const { equippedSkin, equippedAnimation, equippedTitle } = (body ?? {}) as {
     equippedSkin?: unknown;

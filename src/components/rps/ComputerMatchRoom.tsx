@@ -12,7 +12,7 @@ import {
 } from "@/lib/rps/constants";
 import { decideWinner } from "@/lib/rps/game";
 import { AI_DIFFICULTY_LABEL, pickAiMove } from "@/lib/rps/ai";
-import { useRpsName } from "@/lib/rps/use-name";
+import { useRpsIdentity } from "@/lib/rps/use-identity";
 import { createDefaultProfile, DEFAULT_SKIN } from "@/lib/rps/cosmetics";
 import type { AiDifficulty, Move, PlayerProfile } from "@/lib/rps/types";
 import { MoveButton } from "./MoveButton";
@@ -35,7 +35,7 @@ const AI_NAME_BY_DIFFICULTY: Record<AiDifficulty, string> = {
 };
 
 export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) {
-  const { name } = useRpsName();
+  const { name } = useRpsIdentity();
   const router = useRouter();
 
   const [phase, setPhase] = useState<Phase>("countdown");

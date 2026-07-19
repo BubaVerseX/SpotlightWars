@@ -1,4 +1,5 @@
 import type { AiDifficulty, PlayerProfile, VsComputerStats } from "./types";
+import { shortenAddress } from "./wallet";
 
 export type CosmeticCategory = "skin" | "animation" | "title";
 
@@ -222,6 +223,8 @@ export function createDefaultProfile(name: string): PlayerProfile {
   const alwaysUnlocked = COSMETICS.filter((c) => !c.achievementId).map((c) => c.id);
   return {
     name,
+    walletAddress: null,
+    ensName: null,
     elo: 1000,
     peakElo: 1000,
     wins: 0,
@@ -235,6 +238,16 @@ export function createDefaultProfile(name: string): PlayerProfile {
     achievementProgress: {},
     vsComputer: createEmptyVsComputerStats(),
   };
+}
+
+/** Wallet-based profiles start with a completely fresh ELO/stats/cosmetics
+ * slate — deliberately not merged with any name-based profile the same
+ * person might have played under before (see AGENTS discussion: keeping
+ * this simple was an explicit choice, not an oversight). */
+export function createDefaultWalletProfile(address: string, ensName: string | null): PlayerProfile {
+  const lower = address.toLowerCase();
+  const base = createDefaultProfile(ensName ?? shortenAddress(lower));
+  return { ...base, walletAddress: lower, ensName };
 }
 
 /**

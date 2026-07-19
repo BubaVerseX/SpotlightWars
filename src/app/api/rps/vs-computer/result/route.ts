@@ -3,6 +3,7 @@ import { getRpsStore } from "@/lib/rps/store";
 import { MAX_NAME_LENGTH } from "@/lib/rps/constants";
 import { AI_DIFFICULTIES } from "@/lib/rps/ai";
 import { ensureVsComputerStats, evaluateAchievements } from "@/lib/rps/cosmetics";
+import { resolveIdentity } from "@/lib/rps/session";
 import type { AiDifficulty } from "@/lib/rps/types";
 
 export async function POST(req: NextRequest) {
@@ -11,16 +12,13 @@ export async function POST(req: NextRequest) {
   const difficulty = body?.difficulty as AiDifficulty;
   const outcome = body?.outcome;
 
-  if (
-    !name ||
-    !AI_DIFFICULTIES.includes(difficulty) ||
-    (outcome !== "win" && outcome !== "loss")
-  ) {
+  const identity = resolveIdentity(req, name);
+  if (!identity || !AI_DIFFICULTIES.includes(difficulty) || (outcome !== "win" && outcome !== "loss")) {
     return NextResponse.json({ error: "Invalid vs-computer result." }, { status: 400 });
   }
 
   const store = getRpsStore();
-  const profile = await store.getOrCreatePlayer(name);
+  const profile = await store.getOrCreatePlayer(identity);
   const stats = ensureVsComputerStats(profile);
 
   if (outcome === "win") {
