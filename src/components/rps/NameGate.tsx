@@ -31,7 +31,9 @@ export function NameGate({
       }}
       className="w-full max-w-sm space-y-4 text-center"
     >
-      <h1 className="font-display text-2xl font-bold text-foreground">{title}</h1>
+      <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-foreground">
+        {title}
+      </h1>
       {subtitle && <p className="text-sm text-muted">{subtitle}</p>}
       <input
         autoFocus
@@ -39,12 +41,12 @@ export function NameGate({
         onChange={(e) => setValue(e.target.value.slice(0, MAX_NAME_LENGTH))}
         placeholder="Your name or handle"
         maxLength={MAX_NAME_LENGTH}
-        className="w-full rounded-xl border border-border bg-background-elevated px-4 py-3 text-center text-foreground placeholder:text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        className="arcade-input w-full rounded-lg px-4 py-3 text-center placeholder:text-muted"
       />
       <button
         type="submit"
         disabled={disabled || !value.trim()}
-        className="w-full rounded-xl bg-accent px-6 py-3 font-display font-semibold text-background transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+        className="arcade-btn-solid w-full rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
       >
         {submitLabel}
       </button>

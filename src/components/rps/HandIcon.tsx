@@ -74,7 +74,8 @@ export function HandIcon({ move, skin }: HandIconProps) {
         width="1em"
         height="1em"
         shapeRendering="crispEdges"
-        fill="#7CFF6B"
+        fill="#4dffb8"
+        style={{ filter: "drop-shadow(0 0 4px #4dffb8)" }}
         aria-hidden="true"
       >
         <PixelGlyph move={move} />
@@ -107,9 +108,9 @@ export function HandIcon({ move, skin }: HandIconProps) {
         width="1em"
         height="1em"
         fill="none"
-        stroke="#f5b942"
+        stroke="#00f0ff"
         strokeWidth="3"
-        style={{ filter: "drop-shadow(0 0 6px #f5b942) drop-shadow(0 0 14px #f5b942)" }}
+        style={{ filter: "drop-shadow(0 0 6px #00f0ff) drop-shadow(0 0 14px #00f0ff)" }}
         aria-hidden="true"
       >
         <ShapeGlyph move={move} />

@@ -13,11 +13,21 @@ export function ScoreTracker({ myName, myScore, opponentName, opponentScore }: S
   return (
     <div className="flex flex-col items-center gap-1">
       <p className="font-display text-lg font-semibold text-foreground">
-        {myName} <span className="text-accent">{myScore}</span> —{" "}
-        <span className="text-accent">{opponentScore}</span> {opponentName}
+        {myName}{" "}
+        <span className="text-[var(--neon-cyan)]" style={{ textShadow: "0 0 10px var(--neon-cyan-soft)" }}>
+          {myScore}
+        </span>{" "}
+        —{" "}
+        <span
+          className="text-[var(--neon-magenta)]"
+          style={{ textShadow: "0 0 10px var(--neon-magenta-soft)" }}
+        >
+          {opponentScore}
+        </span>{" "}
+        {opponentName}
       </p>
       {isMatchPoint && (
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent glow-text">
+        <p className="arcade-match-point text-xs font-semibold uppercase tracking-[0.2em]">
           Match Point
         </p>
       )}

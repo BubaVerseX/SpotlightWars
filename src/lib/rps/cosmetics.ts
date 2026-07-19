@@ -135,7 +135,7 @@ export const COSMETICS: CosmeticDefinition[] = [
     description: "Awarded for your first match win.",
     unlockMethod: "achievement",
     achievementId: "first-win",
-    color: "#f5b942",
+    color: "#00f0ff",
   },
   {
     id: "title:unbeaten",
@@ -144,7 +144,7 @@ export const COSMETICS: CosmeticDefinition[] = [
     description: "Awarded for a 3-match win streak.",
     unlockMethod: "achievement",
     achievementId: "three-streak",
-    color: "#5eead4",
+    color: "#ff2ee6",
   },
   {
     id: "title:veteran",
@@ -153,7 +153,7 @@ export const COSMETICS: CosmeticDefinition[] = [
     description: "Awarded for reaching 1100 ELO.",
     unlockMethod: "achievement",
     achievementId: "elo-1100",
-    color: "#93c5fd",
+    color: "#7bdcff",
   },
   {
     id: "title:legend",
@@ -162,7 +162,7 @@ export const COSMETICS: CosmeticDefinition[] = [
     description: "Awarded for reaching 1300 ELO.",
     unlockMethod: "achievement",
     achievementId: "elo-1300",
-    color: "#facc15",
+    color: "#ffd84a",
   },
 ];
 
@@ -249,10 +249,10 @@ export interface RankTier {
 }
 
 const RANK_TIERS: { threshold: number; tier: RankTier }[] = [
-  { threshold: 1300, tier: { name: "Legend", color: "#facc15" } },
-  { threshold: 1100, tier: { name: "Veteran", color: "#93c5fd" } },
-  { threshold: 900, tier: { name: "Contender", color: "#f5b942" } },
-  { threshold: -Infinity, tier: { name: "Rookie", color: "#928c82" } },
+  { threshold: 1300, tier: { name: "Legend", color: "#ffd84a" } },
+  { threshold: 1100, tier: { name: "Veteran", color: "#ff2ee6" } },
+  { threshold: 900, tier: { name: "Contender", color: "#00f0ff" } },
+  { threshold: -Infinity, tier: { name: "Rookie", color: "#7c98b3" } },
 ];
 
 export function getRankTier(elo: number): RankTier {

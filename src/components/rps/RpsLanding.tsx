@@ -97,7 +97,7 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
               type="button"
               onClick={handleFindRandom}
               disabled={busy !== null}
-              className="w-full rounded-xl bg-accent px-6 py-3 font-display font-semibold text-background transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+              className="arcade-btn-solid arcade-pulse w-full rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-60"
             >
               {busy === "queue" ? "Finding opponent..." : "Find Random Opponent"}
             </button>
@@ -105,7 +105,7 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
               type="button"
               onClick={handleCreateChallenge}
               disabled={busy !== null}
-              className="w-full rounded-xl border border-border bg-background-elevated px-6 py-3 font-display font-semibold text-foreground transition hover:border-accent disabled:cursor-not-allowed disabled:opacity-60"
+              className="arcade-btn w-full rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-60"
             >
               {busy === "challenge" ? "Creating link..." : "Challenge a Friend"}
             </button>
@@ -117,11 +117,18 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
           />
         )}
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && (
+          <p className="text-sm" style={{ color: "var(--neon-magenta)" }}>
+            {error}
+          </p>
+        )}
 
-        <div className="w-full max-w-sm">
-          <p className="mb-3 text-center text-xs uppercase tracking-[0.3em] text-muted">
-            Leaderboard
+        <div className="arcade-panel w-full max-w-sm rounded-lg p-4">
+          <p
+            className="mb-3 text-center text-xs uppercase tracking-[0.3em]"
+            style={{ color: "var(--neon-cyan)", textShadow: "0 0 10px var(--neon-cyan-soft)" }}
+          >
+            High Scores
           </p>
           <LeaderboardList entries={initialLeaderboard} />
         </div>
@@ -137,7 +144,7 @@ function ChallengeLinkPanel({ link, onEnterMatch }: { link: string; onEnterMatch
   return (
     <div className="w-full max-w-sm space-y-4 text-center">
       <p className="text-sm text-muted">Share this link with a friend:</p>
-      <div className="flex items-center gap-2 rounded-xl border border-border bg-background-elevated px-3 py-2">
+      <div className="arcade-input flex items-center gap-2 rounded-lg px-3 py-2">
         <span className="flex-1 truncate text-left font-mono text-xs text-muted">{link}</span>
         <button
           type="button"
@@ -146,7 +153,7 @@ function ChallengeLinkPanel({ link, onEnterMatch }: { link: string; onEnterMatch
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
           }}
-          className="shrink-0 rounded-lg bg-background px-3 py-1 text-xs font-medium text-accent hover:brightness-110"
+          className="arcade-btn shrink-0 rounded-md px-3 py-1 text-xs font-medium uppercase tracking-wide"
         >
           {copied ? "Copied" : "Copy Link"}
         </button>
@@ -154,7 +161,7 @@ function ChallengeLinkPanel({ link, onEnterMatch }: { link: string; onEnterMatch
       <button
         type="button"
         onClick={onEnterMatch}
-        className="w-full rounded-xl bg-accent px-6 py-3 font-display font-semibold text-background transition hover:brightness-110"
+        className="arcade-btn-solid w-full rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide"
       >
         Enter Match Room
       </button>

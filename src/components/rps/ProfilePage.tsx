@@ -49,12 +49,14 @@ export function ProfilePage() {
   if (!name) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-10 px-6 py-16">
-        <NameGate
-          title="Your Profile"
-          subtitle="Enter your name to see your stats and cosmetics."
-          onSubmit={setName}
-          submitLabel="View Profile"
-        />
+        <div className="arcade-panel w-full max-w-sm rounded-lg p-6">
+          <NameGate
+            title="Your Profile"
+            subtitle="Enter your name to see your stats and cosmetics."
+            onSubmit={setName}
+            submitLabel="View Profile"
+          />
+        </div>
       </main>
     );
   }
@@ -72,21 +74,32 @@ export function ProfilePage() {
   return (
     <>
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-16">
-        <div className="text-center">
-          <Link href="/rps" className="text-xs text-muted underline-offset-2 hover:text-accent hover:underline">
+        <div className="arcade-panel rounded-lg p-6 text-center">
+          <Link
+            href="/rps"
+            className="text-xs text-muted underline-offset-2 hover:text-[var(--neon-cyan)] hover:underline"
+          >
             &larr; Back to Rock Paper Scissors
           </Link>
-          <p className="mt-4 text-xs uppercase tracking-[0.3em] text-muted">Profile</p>
-          <h1 className="mt-2 font-display text-3xl font-bold text-foreground">{profile.name}</h1>
-          <p className="mt-1 text-sm font-semibold" style={{ color: tier.color }}>
+          <p className="mt-4 text-xs uppercase tracking-[0.3em] text-muted">Player Card</p>
+          <h1
+            className="mt-2 font-display text-3xl font-bold uppercase tracking-wide"
+            style={{ color: "var(--neon-cyan)", textShadow: "0 0 16px var(--neon-cyan-soft)" }}
+          >
+            {profile.name}
+          </h1>
+          <p
+            className="mt-1 text-sm font-semibold uppercase tracking-wide"
+            style={{ color: tier.color }}
+          >
             {tier.name}
           </p>
         </div>
 
         <div className="grid grid-cols-3 gap-3 text-center">
-          <Stat label="ELO" value={profile.elo} />
-          <Stat label="Wins" value={profile.wins} />
-          <Stat label="Losses" value={profile.losses} />
+          <Stat label="ELO" value={profile.elo} color="var(--neon-cyan)" />
+          <Stat label="Wins" value={profile.wins} color="var(--neon-cyan)" />
+          <Stat label="Losses" value={profile.losses} color="var(--neon-magenta)" />
         </div>
 
         <CosmeticSection
@@ -113,7 +126,10 @@ export function ProfilePage() {
         />
 
         <div>
-          <p className="mb-3 text-center text-xs uppercase tracking-[0.3em] text-muted">
+          <p
+            className="mb-3 text-center text-xs uppercase tracking-[0.3em]"
+            style={{ color: "var(--neon-gold)" }}
+          >
             Achievements
           </p>
           <ul className="space-y-2">
@@ -124,11 +140,25 @@ export function ProfilePage() {
                 <li
                   key={a.id}
                   className={`rounded-lg border px-4 py-2 text-sm ${
-                    done ? "border-accent/40 bg-accent/10" : "border-border bg-background-elevated"
+                    done ? "" : "border-border bg-background-elevated"
                   }`}
+                  style={
+                    done
+                      ? {
+                          borderColor: "var(--neon-gold)",
+                          background: "rgba(255, 216, 74, 0.06)",
+                          boxShadow: "0 0 12px var(--neon-gold-soft)",
+                        }
+                      : undefined
+                  }
                 >
                   <div className="flex items-center justify-between">
-                    <span className={done ? "text-foreground" : "text-muted"}>{a.name}</span>
+                    <span
+                      className={done ? "font-medium" : "text-muted"}
+                      style={done ? { color: "var(--neon-gold)" } : undefined}
+                    >
+                      {a.name}
+                    </span>
                     <span className="text-xs text-muted">
                       {Math.min(progress, a.target)}/{a.target}
                     </span>
@@ -145,10 +175,12 @@ export function ProfilePage() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Stat({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="rounded-xl border border-border bg-background-elevated px-4 py-3">
-      <p className="font-display text-2xl font-bold text-accent">{value}</p>
+    <div className="arcade-panel rounded-lg px-4 py-3">
+      <p className="font-display text-2xl font-bold" style={{ color }}>
+        {value}
+      </p>
       <p className="text-xs uppercase tracking-wide text-muted">{label}</p>
     </div>
   );
@@ -178,10 +210,10 @@ function CosmeticSection({
           <button
             type="button"
             onClick={() => onEquip(null)}
-            className={`rounded-lg border px-3 py-2 text-sm transition ${
+            className={`rounded-lg px-3 py-2 text-sm uppercase tracking-wide transition ${
               equipped === null
-                ? "border-accent bg-accent/10 text-foreground"
-                : "border-border bg-background-elevated text-muted hover:border-accent/60"
+                ? "arcade-panel"
+                : "border border-border bg-background-elevated text-muted hover:border-[var(--neon-cyan)] hover:text-foreground"
             }`}
           >
             None
@@ -197,10 +229,10 @@ function CosmeticSection({
               disabled={!isUnlocked}
               onClick={() => onEquip(option.id)}
               title={option.description}
-              className={`rounded-lg border px-3 py-2 text-sm transition disabled:cursor-not-allowed disabled:opacity-40 ${
+              className={`rounded-lg px-3 py-2 text-sm uppercase tracking-wide transition disabled:cursor-not-allowed disabled:opacity-40 ${
                 isEquipped
-                  ? "border-accent bg-accent/10 text-foreground"
-                  : "border-border bg-background-elevated text-muted hover:border-accent/60"
+                  ? "arcade-panel"
+                  : "border border-border bg-background-elevated text-muted hover:border-[var(--neon-cyan)] hover:text-foreground"
               }`}
             >
               {option.name}

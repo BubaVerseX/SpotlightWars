@@ -34,15 +34,21 @@ export function ChallengeJoin({ matchId }: { matchId: string }) {
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-16">
-      <NameGate
-        title="You've been challenged!"
-        subtitle="Enter a name to join the match."
-        onSubmit={handleJoin}
-        submitLabel={joining ? "Joining..." : "Join Match"}
-        defaultValue={name}
-        disabled={joining}
-      />
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      <div className="arcade-panel w-full max-w-sm rounded-lg p-6">
+        <NameGate
+          title="You've been challenged!"
+          subtitle="Enter a name to join the match."
+          onSubmit={handleJoin}
+          submitLabel={joining ? "Joining..." : "Join Match"}
+          defaultValue={name}
+          disabled={joining}
+        />
+      </div>
+      {error && (
+        <p className="text-sm" style={{ color: "var(--neon-magenta)" }}>
+          {error}
+        </p>
+      )}
     </main>
   );
 }

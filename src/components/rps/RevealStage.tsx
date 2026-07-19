@@ -26,27 +26,28 @@ export function RevealStage({
   const isDraw = outcome === "draw";
 
   return (
-    <div className="flex items-center justify-center gap-10 sm:gap-16">
-      <div className="flex flex-col items-center gap-2">
+    <div className="relative flex items-center justify-center gap-10 sm:gap-16">
+      <div className="arcade-screen-flash" />
+      <div className="relative flex flex-col items-center gap-2">
         <span
           className={`animate-clash-left flex justify-center text-7xl transition-all duration-500 sm:text-8xl ${
-            isDraw ? "" : iWon ? "glow-text scale-110" : "scale-90 opacity-40 grayscale"
+            isDraw ? "" : iWon ? "animate-power-up" : "animate-power-drain"
           }`}
         >
           <HandIcon move={myMove} skin={mySkin} />
         </span>
-        <span className="text-sm text-muted">{myName} (you)</span>
+        <span className="text-sm text-[var(--neon-cyan)]">{myName} (you)</span>
       </div>
       <span className="text-2xl text-muted">vs</span>
-      <div className="flex flex-col items-center gap-2">
+      <div className="relative flex flex-col items-center gap-2">
         <span
           className={`animate-clash-right flex justify-center text-7xl transition-all duration-500 sm:text-8xl ${
-            isDraw ? "" : !iWon ? "glow-text scale-110" : "scale-90 opacity-40 grayscale"
+            isDraw ? "" : !iWon ? "animate-power-up" : "animate-power-drain"
           }`}
         >
           <HandIcon move={opponentMove} skin={opponentSkin} />
         </span>
-        <span className="text-sm text-muted">{opponentName}</span>
+        <span className="text-sm text-[var(--neon-magenta)]">{opponentName}</span>
       </div>
     </div>
   );

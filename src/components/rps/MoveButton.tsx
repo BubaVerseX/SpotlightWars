@@ -20,8 +20,8 @@ export function MoveButton({ move, skin, selected, disabled, onSelect }: MoveBut
       onClick={() => onSelect(move)}
       className={`flex flex-col items-center gap-2 rounded-2xl border px-6 py-5 transition disabled:cursor-not-allowed disabled:opacity-40 ${
         selected
-          ? "border-accent bg-accent/10 shadow-[0_0_30px_var(--accent-soft)]"
-          : "border-border bg-background-elevated hover:border-accent/60"
+          ? "arcade-panel border-[var(--neon-cyan)]"
+          : "border-border bg-background-elevated hover:border-[var(--neon-cyan)] hover:shadow-[0_0_16px_var(--neon-cyan-soft)]"
       }`}
     >
       <span className="flex justify-center text-5xl">

@@ -5,22 +5,36 @@ interface PlayerBadgeProps {
   elo?: number;
   equippedTitle?: string | null;
   align?: "left" | "center";
+  variant?: "self" | "opponent";
 }
 
-export function PlayerBadge({ name, elo, equippedTitle, align = "center" }: PlayerBadgeProps) {
+export function PlayerBadge({
+  name,
+  elo,
+  equippedTitle,
+  align = "center",
+  variant = "self",
+}: PlayerBadgeProps) {
   const title = getCosmetic(equippedTitle);
   const tier = elo !== undefined ? getRankTier(elo) : undefined;
+  const sideColor = variant === "self" ? "var(--neon-cyan)" : "var(--neon-magenta)";
 
   return (
     <div className={`flex flex-col gap-1 ${align === "center" ? "items-center" : "items-start"}`}>
       <div className="flex items-center gap-2">
-        <span className="font-display text-lg font-bold" style={{ color: title?.color }}>
+        <span
+          className="font-display text-lg font-bold"
+          style={{
+            color: title?.color ?? sideColor,
+            textShadow: `0 0 10px ${title?.color ?? sideColor}88`,
+          }}
+        >
           {name}
         </span>
         {tier && (
           <span
             className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-            style={{ color: tier.color, borderColor: `${tier.color}55`, borderWidth: 1 }}
+            style={{ color: tier.color, borderColor: `${tier.color}66`, borderWidth: 1 }}
           >
             {tier.name}
           </span>

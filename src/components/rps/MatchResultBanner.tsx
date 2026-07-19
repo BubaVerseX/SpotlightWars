@@ -24,9 +24,15 @@ export function MatchResultBanner({
   return (
     <div className="flex flex-col items-center gap-4 text-center">
       <p
-        className={`font-display text-4xl font-bold sm:text-5xl ${
-          outcome === "win" ? "text-accent glow-text" : "text-muted"
-        }`}
+        className="font-display text-4xl font-bold uppercase tracking-wide sm:text-5xl"
+        style={{
+          color: outcome === "win" ? "var(--neon-cyan)" : "var(--neon-magenta)",
+          textShadow:
+            outcome === "win"
+              ? "0 0 26px var(--neon-cyan), 0 0 56px var(--neon-cyan-soft)"
+              : "0 0 12px var(--neon-magenta-soft)",
+          opacity: outcome === "win" ? 1 : 0.75,
+        }}
       >
         {outcome === "win" ? "You Win the Match!" : "You Lose the Match"}
       </p>
@@ -35,7 +41,10 @@ export function MatchResultBanner({
       </p>
       <p className="text-sm text-muted">
         {eloAfter} ELO{" "}
-        <span className={eloDelta >= 0 ? "text-accent" : "text-red-400"}>
+        <span
+          style={{ color: eloDelta >= 0 ? "var(--neon-cyan)" : "var(--neon-magenta)" }}
+          className="font-semibold"
+        >
           ({eloDelta >= 0 ? "+" : ""}
           {eloDelta})
         </span>
@@ -44,14 +53,14 @@ export function MatchResultBanner({
         <button
           type="button"
           onClick={onRematch}
-          className="rounded-xl border border-border bg-background-elevated px-6 py-3 font-display font-semibold text-foreground transition hover:border-accent"
+          className="arcade-btn rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide"
         >
           Rematch
         </button>
         <button
           type="button"
           onClick={onPlayAgain}
-          className="rounded-xl bg-accent px-6 py-3 font-display font-semibold text-background transition hover:brightness-110"
+          className="arcade-btn-solid rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide"
         >
           Play Again
         </button>

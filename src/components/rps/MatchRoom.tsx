@@ -342,7 +342,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         <p className="text-muted">Enter a name on the home page first.</p>
         <button
           onClick={() => router.push("/rps")}
-          className="rounded-xl bg-accent px-6 py-3 font-display font-semibold text-background"
+          className="arcade-btn-solid rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide"
         >
           Back to Home
         </button>
@@ -368,11 +368,14 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         {phase === "loading" && <p className="text-muted">Connecting...</p>}
 
         {phase === "unavailable" && (
-          <div className="space-y-4">
-            <p className="font-display text-2xl font-bold text-foreground">
+          <div className="arcade-panel-magenta max-w-sm space-y-4 rounded-lg p-6">
+            <p
+              className="font-display text-2xl font-bold uppercase tracking-wide"
+              style={{ color: "var(--neon-magenta)" }}
+            >
               Multiplayer unavailable
             </p>
-            <p className="max-w-sm text-sm text-muted">
+            <p className="text-sm text-muted">
               Pusher isn&apos;t configured yet, so live matches can&apos;t connect. Add your API
               keys to .env.local and restart the dev server.
             </p>
@@ -380,8 +383,8 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         )}
 
         {phase === "waiting" && (
-          <div className="space-y-4">
-            <p className="font-display text-2xl font-bold text-foreground">
+          <div className="arcade-panel space-y-4 rounded-lg p-6">
+            <p className="font-display text-2xl font-bold uppercase tracking-wide text-foreground">
               Waiting for an opponent...
             </p>
             <p className="text-sm text-muted">
@@ -391,13 +394,16 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         )}
 
         {phase === "full" && (
-          <div className="space-y-4">
-            <p className="font-display text-2xl font-bold text-foreground">
+          <div className="arcade-panel-magenta space-y-4 rounded-lg p-6">
+            <p
+              className="font-display text-2xl font-bold uppercase tracking-wide"
+              style={{ color: "var(--neon-magenta)" }}
+            >
               This match room is full
             </p>
             <button
               onClick={() => router.push("/rps")}
-              className="rounded-xl bg-accent px-6 py-3 font-display font-semibold text-background"
+              className="arcade-btn-solid rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide"
             >
               Back to Home
             </button>
@@ -405,13 +411,16 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         )}
 
         {phase === "disconnected" && (
-          <div className="space-y-4">
-            <p className="font-display text-2xl font-bold text-foreground">
+          <div className="arcade-panel-magenta space-y-4 rounded-lg p-6">
+            <p
+              className="font-display text-2xl font-bold uppercase tracking-wide"
+              style={{ color: "var(--neon-magenta)" }}
+            >
               Opponent disconnected
             </p>
             <button
               onClick={() => router.push("/rps")}
-              className="rounded-xl bg-accent px-6 py-3 font-display font-semibold text-background"
+              className="arcade-btn-solid rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide"
             >
               Back to Matchmaking
             </button>
@@ -421,12 +430,18 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         {phase === "countdown" && opponentInfo && (
           <div className="space-y-6">
             <div className="flex items-center justify-center gap-6">
-              <PlayerBadge name={name} elo={myProfile?.elo} equippedTitle={myProfile?.equippedTitle} />
+              <PlayerBadge
+                name={name}
+                elo={myProfile?.elo}
+                equippedTitle={myProfile?.equippedTitle}
+                variant="self"
+              />
               <span className="text-sm text-muted">vs</span>
               <PlayerBadge
                 name={opponentInfo.name}
                 elo={opponentInfo.elo}
                 equippedTitle={opponentInfo.equippedTitle}
+                variant="opponent"
               />
             </div>
             <ScoreTracker
@@ -435,7 +450,11 @@ export function MatchRoom({ matchId }: { matchId: string }) {
               opponentName={opponentInfo.name}
               opponentScore={opponentScore}
             />
-            <p className="font-display text-7xl font-bold text-accent glow-text">
+            <p
+              key={secondsLeft}
+              className="arcade-countdown-digit font-display text-8xl font-black"
+              style={{ color: "var(--neon-cyan)" }}
+            >
               {secondsLeft > 0 ? secondsLeft : "GO"}
             </p>
           </div>

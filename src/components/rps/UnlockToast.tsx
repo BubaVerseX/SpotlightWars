@@ -25,11 +25,16 @@ export function UnlockToast({ cosmeticIds, onDismiss }: UnlockToastProps) {
         return (
           <div
             key={id}
-            className="animate-takeover-in flex items-center gap-3 rounded-xl border border-accent/40 bg-background-elevated px-4 py-3 shadow-lg"
+            className="arcade-toast animate-takeover-in flex items-center gap-3 rounded-xl bg-background-elevated px-4 py-3"
           >
             <span className="text-2xl">🔓</span>
             <div>
-              <p className="font-display text-sm font-semibold text-accent">New Unlock!</p>
+              <p
+                className="font-display text-sm font-semibold uppercase tracking-wide"
+                style={{ color: "var(--neon-gold)" }}
+              >
+                New Unlock!
+              </p>
               <p className="text-xs text-muted">{cosmetic.name}</p>
             </div>
           </div>
