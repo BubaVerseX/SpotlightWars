@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { NameGate } from "./NameGate";
 import { LeaderboardList } from "./LeaderboardList";
+import { PlayerBadge } from "./PlayerBadge";
 import { useRpsName } from "@/lib/rps/use-name";
-import type { LeaderboardEntry } from "@/lib/rps/types";
+import type { PlayerProfile } from "@/lib/rps/types";
 import { Footer } from "@/components/Footer";
 
 interface RpsLandingProps {
-  initialLeaderboard: LeaderboardEntry[];
+  initialLeaderboard: PlayerProfile[];
 }
 
 export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
@@ -18,6 +20,15 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
   const [busy, setBusy] = useState<"queue" | "challenge" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [challengeLink, setChallengeLink] = useState<string | null>(null);
+  const [profile, setProfile] = useState<PlayerProfile | null>(null);
+
+  useEffect(() => {
+    if (!name) return;
+    fetch(`/api/rps/profile?name=${encodeURIComponent(name)}`)
+      .then((res) => res.json())
+      .then((data) => setProfile(data.profile))
+      .catch(() => setProfile(null));
+  }, [name]);
 
   const handleFindRandom = async () => {
     setError(null);
@@ -72,9 +83,12 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
   return (
     <>
       <main className="flex flex-1 flex-col items-center justify-center gap-10 px-6 py-16">
-        <div className="text-center">
+        <div className="flex flex-col items-center gap-3 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-muted">Playing as</p>
-          <p className="mt-2 font-display text-3xl font-bold text-foreground">{name}</p>
+          <PlayerBadge name={name} elo={profile?.elo} equippedTitle={profile?.equippedTitle} />
+          <Link href="/rps/profile" className="text-xs text-muted underline-offset-2 hover:text-accent hover:underline">
+            View profile &amp; cosmetics
+          </Link>
         </div>
 
         {!challengeLink ? (

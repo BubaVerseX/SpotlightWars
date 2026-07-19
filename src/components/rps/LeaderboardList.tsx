@@ -1,24 +1,45 @@
-import type { LeaderboardEntry } from "@/lib/rps/types";
+import type { PlayerProfile } from "@/lib/rps/types";
+import { getCosmetic, getRankTier } from "@/lib/rps/cosmetics";
 
-export function LeaderboardList({ entries }: { entries: LeaderboardEntry[] }) {
+export function LeaderboardList({ entries }: { entries: PlayerProfile[] }) {
   if (entries.length === 0) {
-    return <p className="text-center text-sm text-muted">No wins recorded yet — be the first.</p>;
+    return <p className="text-center text-sm text-muted">No ranked players yet — be the first.</p>;
   }
 
   return (
     <ol className="space-y-2">
-      {entries.map((entry, i) => (
-        <li
-          key={entry.name}
-          className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background-elevated px-4 py-2 text-sm"
-        >
-          <span className="flex items-center gap-3">
-            <span className="w-5 text-right font-display text-muted">{i + 1}</span>
-            <span className="text-foreground">{entry.name}</span>
-          </span>
-          <span className="font-display text-accent">{entry.wins}</span>
-        </li>
-      ))}
+      {entries.map((entry, i) => {
+        const tier = getRankTier(entry.elo);
+        const title = getCosmetic(entry.equippedTitle);
+        return (
+          <li
+            key={entry.name}
+            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background-elevated px-4 py-2 text-sm"
+          >
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="w-5 shrink-0 text-right font-display text-muted">{i + 1}</span>
+              <span className="min-w-0 truncate">
+                <span className="truncate font-medium" style={{ color: title?.color }}>
+                  {entry.name}
+                </span>
+                {title && <span className="ml-1.5 text-xs text-muted">&ldquo;{title.name}&rdquo;</span>}
+              </span>
+              <span
+                className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                style={{ color: tier.color, borderColor: `${tier.color}55`, borderWidth: 1 }}
+              >
+                {tier.name}
+              </span>
+            </span>
+            <span className="shrink-0 text-right">
+              <span className="font-display text-accent">{entry.elo}</span>
+              <span className="ml-2 text-xs text-muted">
+                {entry.wins}-{entry.losses}
+              </span>
+            </span>
+          </li>
+        );
+      })}
     </ol>
   );
 }

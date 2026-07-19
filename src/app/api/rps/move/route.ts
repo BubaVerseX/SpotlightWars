@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPusherServer } from "@/lib/pusher-server";
 import { getRpsStore } from "@/lib/rps/store";
-import { MAX_NAME_LENGTH, MOVES, RPS_REVEAL_EVENT, rpsMatchChannel } from "@/lib/rps/constants";
-import type { Move } from "@/lib/rps/types";
+import {
+  MAX_NAME_LENGTH,
+  MOVES,
+  ROUNDS_TO_WIN,
+  RPS_REVEAL_EVENT,
+  rpsMatchChannel,
+} from "@/lib/rps/constants";
+import { calculateEloChange, evaluateAchievements } from "@/lib/rps/cosmetics";
+import type { MatchStats, Move, RoundRevealPayload } from "@/lib/rps/types";
 
 function decideWinner(moveA: Move, moveB: Move): "A" | "B" | "draw" {
   if (moveA === moveB) return "draw";
@@ -42,12 +49,67 @@ export async function POST(req: NextRequest) {
   const a = moves[aId];
   const b = moves[bId];
   const result = decideWinner(a.move, b.move);
-  const winnerId = result === "draw" ? null : result === "A" ? aId : bId;
-  const winnerName = result === "draw" ? null : result === "A" ? a.name : b.name;
+  const roundWinnerId = result === "draw" ? null : result === "A" ? aId : bId;
 
-  if (winnerName) {
-    await store.incrLeaderboard(winnerName);
+  let scoreByMemberId = await store.getMatchScore(matchId);
+  if (roundWinnerId) {
+    const newScore = await store.incrMatchScore(matchId, roundWinnerId);
+    scoreByMemberId = { ...scoreByMemberId, [roundWinnerId]: newScore };
   }
+
+  const matchWinnerId =
+    Object.entries(scoreByMemberId).find(([, wins]) => wins >= ROUNDS_TO_WIN)?.[0] ?? null;
+
+  let matchStats: Record<string, MatchStats> | undefined;
+
+  if (matchWinnerId) {
+    const matchLoserId = matchWinnerId === aId ? bId : aId;
+    const winnerEntry = matchWinnerId === aId ? a : b;
+    const loserEntry = matchWinnerId === aId ? b : a;
+
+    const winnerProfile = await store.getOrCreatePlayer(winnerEntry.name);
+    const loserProfile = await store.getOrCreatePlayer(loserEntry.name);
+
+    const eloBeforeWinner = winnerProfile.elo;
+    const eloBeforeLoser = loserProfile.elo;
+    const { winnerDelta, loserDelta } = calculateEloChange(eloBeforeWinner, eloBeforeLoser);
+
+    winnerProfile.elo += winnerDelta;
+    winnerProfile.peakElo = Math.max(winnerProfile.peakElo, winnerProfile.elo);
+    winnerProfile.wins += 1;
+    winnerProfile.currentWinStreak += 1;
+    winnerProfile.bestWinStreak = Math.max(winnerProfile.bestWinStreak, winnerProfile.currentWinStreak);
+
+    loserProfile.elo += loserDelta;
+    loserProfile.losses += 1;
+    loserProfile.currentWinStreak = 0;
+
+    const winnerUnlocks = evaluateAchievements(winnerProfile);
+    const loserUnlocks = evaluateAchievements(loserProfile);
+
+    await store.savePlayer(winnerProfile);
+    await store.savePlayer(loserProfile);
+
+    matchStats = {
+      [matchWinnerId]: {
+        name: winnerProfile.name,
+        eloBefore: eloBeforeWinner,
+        eloAfter: winnerProfile.elo,
+        newUnlocks: winnerUnlocks,
+      },
+      [matchLoserId]: {
+        name: loserProfile.name,
+        eloBefore: eloBeforeLoser,
+        eloAfter: loserProfile.elo,
+        newUnlocks: loserUnlocks,
+      },
+    };
+  }
+
+  // Fresh moves + claim guard for the next round (or a future rematch) —
+  // clear regardless of whether the match just ended.
+  await store.clearMoves(matchId);
+  await store.del(`rps:match:${matchId}:result-claimed`);
 
   let pusher;
   try {
@@ -57,11 +119,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Pusher is not configured on the server." }, { status: 503 });
   }
 
-  await pusher.trigger(rpsMatchChannel(matchId), RPS_REVEAL_EVENT, {
+  const payload: RoundRevealPayload = {
     moves: { [aId]: a.move, [bId]: b.move },
-    winnerId,
+    roundWinnerId,
+    scoreByMemberId,
+    matchWinnerId,
+    matchStats,
     timestamp: Date.now(),
-  });
+  };
+
+  await pusher.trigger(rpsMatchChannel(matchId), RPS_REVEAL_EVENT, payload);
 
   return NextResponse.json({ ok: true });
 }

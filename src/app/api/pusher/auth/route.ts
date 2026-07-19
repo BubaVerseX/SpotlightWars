@@ -25,9 +25,25 @@ export async function POST(req: NextRequest) {
 
   const userId = randomUUID();
   const name = params.get("name")?.trim().slice(0, 24);
+
+  const userInfo: Record<string, string | number> = { id: userId };
+  if (name) userInfo.name = name;
+
+  // RPS-specific extras (optional, ignored by anything that doesn't send them
+  // — e.g. SpotlightWars' own presence channel — so this stays backward
+  // compatible).
+  const equippedSkin = params.get("equippedSkin");
+  const equippedAnimation = params.get("equippedAnimation");
+  const equippedTitle = params.get("equippedTitle");
+  const elo = params.get("elo");
+  if (equippedSkin) userInfo.equippedSkin = equippedSkin;
+  if (equippedAnimation) userInfo.equippedAnimation = equippedAnimation;
+  if (equippedTitle) userInfo.equippedTitle = equippedTitle;
+  if (elo) userInfo.elo = Number(elo);
+
   const authResponse = pusher.authorizeChannel(socketId, channelName, {
     user_id: userId,
-    user_info: name ? { id: userId, name } : { id: userId },
+    user_info: userInfo,
   });
 
   return NextResponse.json(authResponse);

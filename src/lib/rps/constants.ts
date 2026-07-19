@@ -10,6 +10,8 @@ export const MAX_NAME_LENGTH = 24;
 export const COUNTDOWN_SECONDS = 3;
 export const CHOOSE_SECONDS = 10;
 export const REVEAL_DURATION_MS = 2600;
+export const NEXT_ROUND_DELAY_MS = 1800;
+export const ROUNDS_TO_WIN = 2;
 
 export function rpsMatchChannel(matchId: string): string {
   return `${RPS_CHANNEL_PREFIX}${matchId}`;

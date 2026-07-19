@@ -80,3 +80,63 @@ body {
 .animate-clash-right {
   animation: clash-right 400ms cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(420px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-confetti-fall {
+  animation-name: confetti-fall;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+}
+
+@keyframes lightning-flash {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  10%,
+  30% {
+    opacity: 0.25;
+  }
+  20% {
+    opacity: 0;
+  }
+}
+
+.animate-lightning-flash {
+  animation: lightning-flash 600ms ease-out;
+}
+
+@keyframes lightning-bolt {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scaleY(0.3);
+  }
+  15% {
+    opacity: 1;
+    transform: translateX(-50%) scaleY(1);
+  }
+  40% {
+    opacity: 0.6;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-lightning-bolt {
+  animation: lightning-bolt 900ms ease-out;
+  transform-origin: top center;
+}

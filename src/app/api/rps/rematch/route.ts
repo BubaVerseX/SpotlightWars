@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
 
   const store = getRpsStore();
   await store.clearMoves(matchId);
+  await store.clearMatchScore(matchId);
   await store.del(`rps:match:${matchId}:result-claimed`);
 
   let pusher;

@@ -1,16 +1,18 @@
 "use client";
 
-import { MOVE_EMOJI, MOVE_LABEL } from "@/lib/rps/constants";
+import { MOVE_LABEL } from "@/lib/rps/constants";
 import type { Move } from "@/lib/rps/types";
+import { HandIcon } from "./HandIcon";
 
 interface MoveButtonProps {
   move: Move;
+  skin: string;
   selected: boolean;
   disabled: boolean;
   onSelect: (move: Move) => void;
 }
 
-export function MoveButton({ move, selected, disabled, onSelect }: MoveButtonProps) {
+export function MoveButton({ move, skin, selected, disabled, onSelect }: MoveButtonProps) {
   return (
     <button
       type="button"
@@ -22,7 +24,9 @@ export function MoveButton({ move, selected, disabled, onSelect }: MoveButtonPro
           : "border-border bg-background-elevated hover:border-accent/60"
       }`}
     >
-      <span className="text-5xl">{MOVE_EMOJI[move]}</span>
+      <span className="flex justify-center text-5xl">
+        <HandIcon move={move} skin={skin} />
+      </span>
       <span className="text-sm font-medium text-muted">{MOVE_LABEL[move]}</span>
     </button>
   );

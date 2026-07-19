@@ -1,11 +1,21 @@
 import { kv } from "@vercel/kv";
-import type { LeaderboardEntry, MoveEntry } from "./types";
-
-const LEADERBOARD_KEY = "rps:leaderboard";
+import { createDefaultProfile } from "./cosmetics";
+import type { MoveEntry, PlayerProfile } from "./types";
 
 function movesKey(matchId: string): string {
   return `rps:match:${matchId}:moves`;
 }
+
+function scoreKey(matchId: string): string {
+  return `rps:match:${matchId}:score`;
+}
+
+function playerKey(name: string): string {
+  return `rps:player:${name}`;
+}
+
+const ELO_LEADERBOARD_KEY = "rps:leaderboard:elo";
+const MATCH_STATE_TTL_SECONDS = 600;
 
 export interface RpsStore {
   get(key: string): Promise<string | null>;
@@ -13,11 +23,18 @@ export interface RpsStore {
   setNX(key: string, value: string, ttlSeconds: number): Promise<boolean>;
   del(key: string): Promise<boolean>;
   incr(key: string, ttlSeconds?: number): Promise<number>;
+
   hsetMove(matchId: string, memberId: string, entry: MoveEntry): Promise<void>;
   getMoves(matchId: string): Promise<Record<string, MoveEntry>>;
   clearMoves(matchId: string): Promise<void>;
-  incrLeaderboard(name: string): Promise<void>;
-  topLeaderboard(count: number): Promise<LeaderboardEntry[]>;
+
+  incrMatchScore(matchId: string, memberId: string): Promise<number>;
+  getMatchScore(matchId: string): Promise<Record<string, number>>;
+  clearMatchScore(matchId: string): Promise<void>;
+
+  getOrCreatePlayer(name: string): Promise<PlayerProfile>;
+  savePlayer(profile: PlayerProfile): Promise<void>;
+  topEloLeaderboard(count: number): Promise<PlayerProfile[]>;
 }
 
 interface MemoryEntry {
@@ -33,7 +50,8 @@ interface MemoryEntry {
 class MemoryRpsStore implements RpsStore {
   private values = new Map<string, MemoryEntry>();
   private moves = new Map<string, Record<string, MoveEntry>>();
-  private leaderboard = new Map<string, number>();
+  private matchScores = new Map<string, Record<string, number>>();
+  private players = new Map<string, PlayerProfile>();
 
   private alive(key: string): MemoryEntry | null {
     const entry = this.values.get(key);
@@ -90,15 +108,39 @@ class MemoryRpsStore implements RpsStore {
     this.moves.delete(movesKey(matchId));
   }
 
-  async incrLeaderboard(name: string) {
-    this.leaderboard.set(name, (this.leaderboard.get(name) ?? 0) + 1);
+  async incrMatchScore(matchId: string, memberId: string) {
+    const key = scoreKey(matchId);
+    const current = this.matchScores.get(key) ?? {};
+    current[memberId] = (current[memberId] ?? 0) + 1;
+    this.matchScores.set(key, current);
+    return current[memberId];
   }
 
-  async topLeaderboard(count: number) {
-    return [...this.leaderboard.entries()]
-      .map(([name, wins]) => ({ name, wins }))
-      .sort((a, b) => b.wins - a.wins)
-      .slice(0, count);
+  async getMatchScore(matchId: string) {
+    return { ...(this.matchScores.get(scoreKey(matchId)) ?? {}) };
+  }
+
+  async clearMatchScore(matchId: string) {
+    this.matchScores.delete(scoreKey(matchId));
+  }
+
+  async getOrCreatePlayer(name: string) {
+    const existing = this.players.get(name);
+    if (existing) return structuredClone(existing);
+    const fresh = createDefaultProfile(name);
+    this.players.set(name, structuredClone(fresh));
+    return structuredClone(fresh);
+  }
+
+  async savePlayer(profile: PlayerProfile) {
+    this.players.set(profile.name, structuredClone(profile));
+  }
+
+  async topEloLeaderboard(count: number) {
+    return [...this.players.values()]
+      .sort((a, b) => b.elo - a.elo)
+      .slice(0, count)
+      .map((p) => structuredClone(p));
   }
 }
 
@@ -146,40 +188,74 @@ class KvRpsStore implements RpsStore {
     await kv.del(movesKey(matchId));
   }
 
-  async incrLeaderboard(name: string) {
-    await kv.zincrby(LEADERBOARD_KEY, 1, name);
+  async incrMatchScore(matchId: string, memberId: string) {
+    const key = scoreKey(matchId);
+    const next = await kv.hincrby(key, memberId, 1);
+    await kv.expire(key, MATCH_STATE_TTL_SECONDS);
+    return next;
   }
 
-  async topLeaderboard(count: number) {
-    const raw = await kv.zrange<(string | number)[]>(LEADERBOARD_KEY, 0, count - 1, {
-      rev: true,
-      withScores: true,
-    });
-    const entries: LeaderboardEntry[] = [];
-    for (let i = 0; i < raw.length; i += 2) {
-      entries.push({ name: String(raw[i]), wins: Number(raw[i + 1]) });
-    }
-    return entries;
+  async getMatchScore(matchId: string) {
+    const raw = await kv.hgetall<Record<string, number>>(scoreKey(matchId));
+    return raw ?? {};
+  }
+
+  async clearMatchScore(matchId: string) {
+    await kv.del(scoreKey(matchId));
+  }
+
+  private async getPlayerRaw(name: string) {
+    return await kv.get<PlayerProfile>(playerKey(name));
+  }
+
+  async getOrCreatePlayer(name: string) {
+    const existing = await this.getPlayerRaw(name);
+    if (existing) return existing;
+    const fresh = createDefaultProfile(name);
+    await this.savePlayer(fresh);
+    return fresh;
+  }
+
+  async savePlayer(profile: PlayerProfile) {
+    await kv.set(playerKey(profile.name), profile);
+    await kv.zadd(ELO_LEADERBOARD_KEY, { score: profile.elo, member: profile.name });
+  }
+
+  async topEloLeaderboard(count: number) {
+    const names = await kv.zrange<string[]>(ELO_LEADERBOARD_KEY, 0, count - 1, { rev: true });
+    const profiles = await Promise.all(names.map((n) => this.getPlayerRaw(n)));
+    return profiles.filter((p): p is PlayerProfile => p !== null);
   }
 }
 
-let instance: RpsStore | null = null;
-let warned = false;
+// Cached on `globalThis` rather than a plain module-level variable: Next.js
+// dev-server "on-demand entries" can unload and recompile an individual API
+// route after a period of inactivity, which would otherwise hand the route a
+// brand-new module instance (and a fresh, empty in-memory store) on its next
+// hit — even though other routes' instances are still "warm". globalThis
+// survives that recompilation, so the in-memory fallback stays consistent
+// across every route for the lifetime of the dev server process. Real KV
+// doesn't need this — it's an actually-external store — but it's a cheap,
+// standard guard to add regardless (same idea as caching a Prisma client).
+declare global {
+  var __rpsStore: RpsStore | undefined;
+  var __rpsStoreWarned: boolean | undefined;
+}
 
 export function getRpsStore(): RpsStore {
-  if (instance) return instance;
+  if (globalThis.__rpsStore) return globalThis.__rpsStore;
 
   const hasKv = !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN;
 
-  if (!hasKv && !warned) {
+  if (!hasKv && !globalThis.__rpsStoreWarned) {
     console.warn(
       "[RPS] KV_REST_API_URL / KV_REST_API_TOKEN are not set. Falling back to an in-memory " +
-        "store — matchmaking and moves still work, but the leaderboard will not persist across " +
-        "restarts or across serverless instances. See .env.local.example."
+        "store — matches, ELO, and cosmetics still work, but nothing persists across restarts " +
+        "or across serverless instances. See .env.local.example."
     );
-    warned = true;
+    globalThis.__rpsStoreWarned = true;
   }
 
-  instance = hasKv ? new KvRpsStore() : new MemoryRpsStore();
-  return instance;
+  globalThis.__rpsStore = hasKv ? new KvRpsStore() : new MemoryRpsStore();
+  return globalThis.__rpsStore;
 }

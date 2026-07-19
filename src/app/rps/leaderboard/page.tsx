@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function LeaderboardPage() {
   const store = getRpsStore();
-  const entries = await store.topLeaderboard(10);
+  const entries = await store.topEloLeaderboard(10);
 
   return (
     <>
