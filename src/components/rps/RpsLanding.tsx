@@ -141,7 +141,13 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
       <main className="flex flex-1 flex-col items-center justify-center gap-10 px-6 py-16">
         <div className="flex flex-col items-center gap-3 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-muted">Welcome back</p>
-          <PlayerBadge name={name} elo={profile?.elo} equippedTitle={profile?.equippedTitle} />
+          <PlayerBadge
+            name={name}
+            elo={profile?.elo}
+            equippedTitle={profile?.equippedTitle}
+            equippedAvatar={profile?.equippedAvatar}
+            walletAddress={profile?.walletAddress}
+          />
           <div className="flex items-center gap-3 text-xs text-muted">
             <Link href="/profile" className="underline-offset-2 hover:text-accent hover:underline">
               View profile &amp; cosmetics

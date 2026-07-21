@@ -63,6 +63,12 @@ export interface PlayerProfile {
   /** Brief flourish played when this player enters a match room. `null`
    * means no intro (the room just appears, as it always used to). */
   equippedIntro: string | null;
+  /** Manually-picked avatar icon id, or `null` to fall back to a
+   * deterministically generated pattern (see blockie.ts) seeded from the
+   * wallet address, or the display name for name-based players. Unlike
+   * skins/animations/titles, avatars aren't achievement-gated — every id in
+   * AVATARS is available to everyone from the start. */
+  equippedAvatar: string | null;
   achievementProgress: Record<string, number>;
   vsComputer: VsComputerStats;
 }

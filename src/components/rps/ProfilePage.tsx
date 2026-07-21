@@ -5,6 +5,7 @@ import Link from "next/link";
 import { NameGate } from "./NameGate";
 import { WalletConnect } from "./WalletConnect";
 import { BannerPreview } from "./BannerPreview";
+import { PlayerAvatar } from "./PlayerAvatar";
 import { useRpsIdentity } from "@/lib/rps/use-identity";
 import type { PlayerProfile } from "@/lib/rps/types";
 import {
@@ -155,6 +156,14 @@ export function ProfilePage() {
               </Link>
             </div>
             <p className="mt-4 text-xs uppercase tracking-[0.3em] text-muted">Player Card</p>
+            <div className="mt-3 flex justify-center">
+              <PlayerAvatar
+                equippedAvatar={profile.equippedAvatar}
+                walletAddress={profile.walletAddress}
+                name={profile.name}
+                size={72}
+              />
+            </div>
             <h1
               className="mt-2 font-display text-3xl font-bold uppercase tracking-wide"
               style={{ color: "var(--neon-cyan)", textShadow: "0 0 16px var(--neon-cyan-soft)" }}

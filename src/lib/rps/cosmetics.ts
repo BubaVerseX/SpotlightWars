@@ -440,6 +440,7 @@ export function createDefaultProfile(name: string): PlayerProfile {
     equippedTitle: null,
     equippedBanner: null,
     equippedIntro: null,
+    equippedAvatar: null,
     achievementProgress: {},
     vsComputer: createEmptyVsComputerStats(),
   };

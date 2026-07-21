@@ -54,6 +54,7 @@ interface PresenceMember {
     equippedSkin?: string;
     equippedAnimation?: string;
     equippedTitle?: string;
+    equippedAvatar?: string;
     elo?: number;
   };
 }
@@ -63,6 +64,7 @@ interface OpponentInfo {
   equippedSkin: string;
   equippedAnimation: string;
   equippedTitle: string | null;
+  equippedAvatar: string | null;
   elo?: number;
 }
 
@@ -173,6 +175,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         equippedSkin: profile.equippedSkin,
         equippedAnimation: profile.equippedAnimation,
         equippedTitle: profile.equippedTitle,
+        equippedAvatar: profile.equippedAvatar,
         elo: profile.elo,
       });
 
@@ -196,6 +199,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
                 equippedSkin: member.info?.equippedSkin ?? DEFAULT_SKIN,
                 equippedAnimation: member.info?.equippedAnimation ?? DEFAULT_ANIMATION,
                 equippedTitle: member.info?.equippedTitle ?? null,
+                equippedAvatar: member.info?.equippedAvatar ?? null,
                 elo: member.info?.elo,
               },
             };
@@ -523,6 +527,8 @@ export function MatchRoom({ matchId }: { matchId: string }) {
                 name={name}
                 elo={myProfile?.elo}
                 equippedTitle={myProfile?.equippedTitle}
+                equippedAvatar={myProfile?.equippedAvatar}
+                walletAddress={myProfile?.walletAddress}
                 variant="self"
               />
               <span className="text-sm text-muted">vs</span>
@@ -530,6 +536,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
                 name={opponentInfo.name}
                 elo={opponentInfo.elo}
                 equippedTitle={opponentInfo.equippedTitle}
+                equippedAvatar={opponentInfo.equippedAvatar}
                 variant="opponent"
               />
             </div>

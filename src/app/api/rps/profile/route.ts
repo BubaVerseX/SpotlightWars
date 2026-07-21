@@ -3,6 +3,7 @@ import { getRpsStore } from "@/lib/rps/store";
 import { MAX_NAME_LENGTH } from "@/lib/rps/constants";
 import { resolveIdentity } from "@/lib/rps/session";
 import { claimOrLoadNamedProfile, toPublicProfile } from "@/lib/rps/name-claim";
+import { isValidAvatarId } from "@/lib/rps/avatars";
 import type { PlayerProfile } from "@/lib/rps/types";
 
 const TAKEN_ERROR = "This name is already taken — try another one.";
@@ -51,13 +52,15 @@ export async function POST(req: NextRequest) {
     profile = result.profile;
   }
 
-  const { equippedSkin, equippedAnimation, equippedTitle, equippedBanner, equippedIntro } = (body ?? {}) as {
-    equippedSkin?: unknown;
-    equippedAnimation?: unknown;
-    equippedTitle?: unknown;
-    equippedBanner?: unknown;
-    equippedIntro?: unknown;
-  };
+  const { equippedSkin, equippedAnimation, equippedTitle, equippedBanner, equippedIntro, equippedAvatar } =
+    (body ?? {}) as {
+      equippedSkin?: unknown;
+      equippedAnimation?: unknown;
+      equippedTitle?: unknown;
+      equippedBanner?: unknown;
+      equippedIntro?: unknown;
+      equippedAvatar?: unknown;
+    };
 
   if (typeof equippedSkin === "string") {
     if (!profile.unlockedCosmetics.includes(equippedSkin)) {
@@ -92,6 +95,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "That intro isn't unlocked yet." }, { status: 400 });
     }
     profile.equippedIntro = equippedIntro;
+  }
+
+  // Unlike the other equipped* fields above, avatars aren't gated by
+  // unlockedCosmetics — every AVATARS id is free for anyone to pick.
+  if (equippedAvatar === null || typeof equippedAvatar === "string") {
+    if (equippedAvatar !== null && !isValidAvatarId(equippedAvatar)) {
+      return NextResponse.json({ error: "That avatar doesn't exist." }, { status: 400 });
+    }
+    profile.equippedAvatar = equippedAvatar;
   }
 
   await store.savePlayer(profile);

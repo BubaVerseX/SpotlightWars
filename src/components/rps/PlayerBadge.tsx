@@ -1,9 +1,12 @@
 import { getCosmetic, getRankTier } from "@/lib/rps/cosmetics";
+import { PlayerAvatar } from "./PlayerAvatar";
 
 interface PlayerBadgeProps {
   name: string;
   elo?: number;
   equippedTitle?: string | null;
+  equippedAvatar?: string | null;
+  walletAddress?: string | null;
   align?: "left" | "center";
   variant?: "self" | "opponent";
 }
@@ -12,6 +15,8 @@ export function PlayerBadge({
   name,
   elo,
   equippedTitle,
+  equippedAvatar,
+  walletAddress,
   align = "center",
   variant = "self",
 }: PlayerBadgeProps) {
@@ -22,6 +27,7 @@ export function PlayerBadge({
   return (
     <div className={`flex flex-col gap-1 ${align === "center" ? "items-center" : "items-start"}`}>
       <div className="flex items-center gap-2">
+        <PlayerAvatar equippedAvatar={equippedAvatar} walletAddress={walletAddress} name={name} size={28} />
         <span
           className="font-display text-lg font-bold"
           style={{

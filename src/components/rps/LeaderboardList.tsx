@@ -2,6 +2,7 @@ import type { PublicPlayerProfile } from "@/lib/rps/types";
 import { getCosmetic, getRankTier } from "@/lib/rps/cosmetics";
 import { BannerPreview } from "./BannerPreview";
 import { AngledDivider } from "./AngledDivider";
+import { PlayerAvatar } from "./PlayerAvatar";
 
 interface LeaderboardListProps {
   entries: PublicPlayerProfile[];
@@ -85,6 +86,12 @@ function PodiumCard({ entry, rank }: { entry: PublicPlayerProfile; rank: number 
             >
               #{rank}
             </span>
+            <PlayerAvatar
+              equippedAvatar={entry.equippedAvatar}
+              walletAddress={entry.walletAddress}
+              name={entry.name}
+              size={isChamp ? 48 : 36}
+            />
             <span
               className={`truncate font-display font-bold ${isChamp ? "text-2xl" : "text-lg"}`}
               style={{ color: title?.color ?? "var(--foreground)" }}
@@ -146,6 +153,12 @@ function CompactRow({ entry, rank }: { entry: PublicPlayerProfile; rank: number 
           >
             {rank}
           </span>
+          <PlayerAvatar
+            equippedAvatar={entry.equippedAvatar}
+            walletAddress={entry.walletAddress}
+            name={entry.name}
+            size={24}
+          />
           <span className="min-w-0 truncate">
             <span className="truncate font-medium" style={{ color: title?.color ?? "var(--foreground)" }}>
               {entry.name}

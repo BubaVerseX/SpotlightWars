@@ -276,9 +276,16 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
         {phase === "countdown" && (
           <div className="space-y-6">
             <div className="flex items-center justify-center gap-6">
-              <PlayerBadge name={name} elo={myProfile?.elo} equippedTitle={myProfile?.equippedTitle} variant="self" />
+              <PlayerBadge
+                name={name}
+                elo={myProfile?.elo}
+                equippedTitle={myProfile?.equippedTitle}
+                equippedAvatar={myProfile?.equippedAvatar}
+                walletAddress={myProfile?.walletAddress}
+                variant="self"
+              />
               <span className="text-sm text-muted">vs</span>
-              <PlayerBadge name={aiName} variant="opponent" />
+              <PlayerBadge name={aiName} equippedAvatar="avatar:circuit" variant="opponent" />
             </div>
             <ScoreTracker myName={name} myScore={myScore} opponentName={aiName} opponentScore={aiScore} />
             <p
