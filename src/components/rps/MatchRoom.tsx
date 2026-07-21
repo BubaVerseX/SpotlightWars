@@ -16,10 +16,12 @@ import {
   RPS_REVEAL_EVENT,
   RPS_TAUNT_EVENT,
   TAUNT_DISPLAY_MS,
+  VS_EFFECT_DURATION_MS,
   rpsMatchChannel,
 } from "@/lib/rps/constants";
 import { useRpsIdentity } from "@/lib/rps/use-identity";
 import { createDefaultProfile, DEFAULT_ANIMATION, DEFAULT_SKIN, getCosmeticsByCategory } from "@/lib/rps/cosmetics";
+import { playSound } from "@/lib/rps/sound";
 import type { Move, PlayerProfile, RoundRevealPayload } from "@/lib/rps/types";
 import { MoveButton } from "./MoveButton";
 import { RevealStage } from "./RevealStage";
@@ -29,6 +31,8 @@ import { ScoreTracker } from "./ScoreTracker";
 import { PlayerBadge } from "./PlayerBadge";
 import { VictoryAnimation } from "./VictoryAnimation";
 import { MatchIntroOverlay } from "./MatchIntroOverlay";
+import { VsScreenOverlay } from "./VsScreenOverlay";
+import { ArenaBackdrop } from "./ArenaBackdrop";
 import { TauntBar } from "./TauntBar";
 import { TauntBubble } from "./TauntBubble";
 import { UnlockToast } from "./UnlockToast";
@@ -55,6 +59,7 @@ interface PresenceMember {
     equippedAnimation?: string;
     equippedTitle?: string;
     equippedAvatar?: string;
+    equippedAura?: string;
     elo?: number;
   };
 }
@@ -65,6 +70,7 @@ interface OpponentInfo {
   equippedAnimation: string;
   equippedTitle: string | null;
   equippedAvatar: string | null;
+  equippedAura: string | null;
   elo?: number;
 }
 
@@ -87,15 +93,21 @@ export function MatchRoom({ matchId }: { matchId: string }) {
   const [newUnlocks, setNewUnlocks] = useState<string[]>([]);
   const [roundKey, setRoundKey] = useState(0);
   const [showIntro, setShowIntro] = useState(false);
-  const [incomingTaunt, setIncomingTaunt] = useState<{ tauntId: string; align: "self" | "opponent"; key: number } | null>(
-    null
-  );
+  const [showVsEffect, setShowVsEffect] = useState(false);
+  const [incomingTaunt, setIncomingTaunt] = useState<{
+    tauntId: string;
+    customText?: string | null;
+    align: "self" | "opponent";
+    key: number;
+  } | null>(null);
   const [tauntCooldown, setTauntCooldown] = useState(false);
 
   const myMoveRef = useRef<Move | null>(null);
   const myMemberIdRef = useRef<string | null>(null);
+  const mySoundPackRef = useRef<string | undefined>(undefined);
   const phaseRef = useRef<Phase>("loading");
   const introShownRef = useRef(false);
+  const vsEffectShownRef = useRef(false);
 
   useEffect(() => {
     myMoveRef.current = myMove;
@@ -106,11 +118,15 @@ export function MatchRoom({ matchId }: { matchId: string }) {
   useEffect(() => {
     phaseRef.current = phase;
   }, [phase]);
+  useEffect(() => {
+    mySoundPackRef.current = myProfile?.equippedSoundPack;
+  }, [myProfile?.equippedSoundPack]);
 
   const submitMove = useCallback(
     async (move: Move) => {
       if (myMoveRef.current || !name || !myMemberIdRef.current) return;
       setMyMove(move);
+      playSound("moveSelect", mySoundPackRef.current);
       try {
         await fetch("/api/rps/move", {
           method: "POST",
@@ -176,6 +192,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         equippedAnimation: profile.equippedAnimation,
         equippedTitle: profile.equippedTitle,
         equippedAvatar: profile.equippedAvatar,
+        equippedAura: profile.equippedAura,
         elo: profile.elo,
       });
 
@@ -200,6 +217,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
                 equippedAnimation: member.info?.equippedAnimation ?? DEFAULT_ANIMATION,
                 equippedTitle: member.info?.equippedTitle ?? null,
                 equippedAvatar: member.info?.equippedAvatar ?? null,
+                equippedAura: member.info?.equippedAura ?? null,
                 elo: member.info?.elo,
               },
             };
@@ -280,6 +298,18 @@ export function MatchRoom({ matchId }: { matchId: string }) {
           }
         }
 
+        if (payload.matchWinnerId) {
+          playSound(
+            payload.matchWinnerId === myMemberIdRef.current ? "matchWin" : "matchLose",
+            mySoundPackRef.current
+          );
+        } else if (payload.roundWinnerId) {
+          playSound(
+            payload.roundWinnerId === myMemberIdRef.current ? "roundWin" : "roundLose",
+            mySoundPackRef.current
+          );
+        }
+
         setPhase("revealing");
       });
 
@@ -294,9 +324,9 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         setPhase("countdown");
       });
 
-      channel.bind(RPS_TAUNT_EVENT, (payload: { memberId: string; tauntId: string }) => {
+      channel.bind(RPS_TAUNT_EVENT, (payload: { memberId: string; tauntId: string; customText?: string }) => {
         const align = payload.memberId === myMemberIdRef.current ? "self" : "opponent";
-        setIncomingTaunt({ tauntId: payload.tauntId, align, key: Date.now() });
+        setIncomingTaunt({ tauntId: payload.tauntId, customText: payload.customText, align, key: Date.now() });
       });
 
       cleanup = () => {
@@ -329,6 +359,16 @@ export function MatchRoom({ matchId }: { matchId: string }) {
     introShownRef.current = true;
     setShowIntro(true);
     const timer = setTimeout(() => setShowIntro(false), MATCH_INTRO_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [opponentInfo]);
+
+  // Same one-shot convention as the intro flourish above, for this player's
+  // equipped VS-screen effect — shown alongside it, not instead of it.
+  useEffect(() => {
+    if (!opponentInfo || vsEffectShownRef.current) return;
+    vsEffectShownRef.current = true;
+    setShowVsEffect(true);
+    const timer = setTimeout(() => setShowVsEffect(false), VS_EFFECT_DURATION_MS);
     return () => clearTimeout(timer);
   }, [opponentInfo]);
 
@@ -439,6 +479,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
 
   return (
     <>
+      <ArenaBackdrop arenaThemeId={myProfile?.equippedArenaTheme} />
       <main className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-16 text-center">
         {phase === "loading" && <p className="text-muted">Connecting...</p>}
 
@@ -528,6 +569,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
                 elo={myProfile?.elo}
                 equippedTitle={myProfile?.equippedTitle}
                 equippedAvatar={myProfile?.equippedAvatar}
+                equippedAura={myProfile?.equippedAura}
                 walletAddress={myProfile?.walletAddress}
                 variant="self"
               />
@@ -537,6 +579,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
                 elo={opponentInfo.elo}
                 equippedTitle={opponentInfo.equippedTitle}
                 equippedAvatar={opponentInfo.equippedAvatar}
+                equippedAura={opponentInfo.equippedAura}
                 variant="opponent"
               />
             </div>
@@ -553,7 +596,12 @@ export function MatchRoom({ matchId }: { matchId: string }) {
             >
               {secondsLeft > 0 ? secondsLeft : "GO"}
             </p>
-            <TauntBar tauntIds={unlockedTaunts} onSend={handleSendTaunt} disabled={tauntCooldown} />
+            <TauntBar
+              tauntIds={unlockedTaunts}
+              onSend={handleSendTaunt}
+              disabled={tauntCooldown}
+              customTauntText={myProfile?.customTaunt}
+            />
           </div>
         )}
 
@@ -613,7 +661,12 @@ export function MatchRoom({ matchId }: { matchId: string }) {
               {phase === "roundResult" && !matchWinnerId && (
                 <>
                   <ResultBanner outcome={roundOutcome} />
-                  <TauntBar tauntIds={unlockedTaunts} onSend={handleSendTaunt} disabled={tauntCooldown} />
+                  <TauntBar
+              tauntIds={unlockedTaunts}
+              onSend={handleSendTaunt}
+              disabled={tauntCooldown}
+              customTauntText={myProfile?.customTaunt}
+            />
                 </>
               )}
             </div>
@@ -645,7 +698,17 @@ export function MatchRoom({ matchId }: { matchId: string }) {
       <Footer />
       <UnlockToast cosmeticIds={newUnlocks} onDismiss={() => setNewUnlocks([])} />
       {showIntro && <MatchIntroOverlay introId={myProfile?.equippedIntro} />}
-      {incomingTaunt && <TauntBubble key={incomingTaunt.key} tauntId={incomingTaunt.tauntId} align={incomingTaunt.align} />}
+      {showVsEffect && opponentInfo && (
+        <VsScreenOverlay vsEffectId={myProfile?.equippedVsEffect} myName={name} opponentName={opponentInfo.name} />
+      )}
+      {incomingTaunt && (
+        <TauntBubble
+          key={incomingTaunt.key}
+          tauntId={incomingTaunt.tauntId}
+          customText={incomingTaunt.customText}
+          align={incomingTaunt.align}
+        />
+      )}
     </>
   );
 }

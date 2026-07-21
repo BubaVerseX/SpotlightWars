@@ -37,6 +37,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "That taunt isn't unlocked." }, { status: 403 });
   }
 
+  // Custom taunt text is never trusted from the request — it was already
+  // filtered + length-capped when saved (see /api/rps/profile), so the
+  // authoritative text always comes from the sender's own stored profile.
+  let customText: string | undefined;
+  if (tauntId === "taunt:custom") {
+    if (!profile.customTaunt) {
+      return NextResponse.json({ error: "You haven't set a custom taunt yet." }, { status: 400 });
+    }
+    customText = profile.customTaunt;
+  }
+
   let pusher;
   try {
     pusher = getPusherServer();
@@ -44,7 +55,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Pusher is not configured on the server." }, { status: 503 });
   }
 
-  await pusher.trigger(rpsMatchChannel(matchId), RPS_TAUNT_EVENT, { memberId, tauntId });
+  await pusher.trigger(rpsMatchChannel(matchId), RPS_TAUNT_EVENT, { memberId, tauntId, customText });
 
   return NextResponse.json({ ok: true });
 }

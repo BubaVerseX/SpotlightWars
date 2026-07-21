@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { parseEther, TransactionReceiptNotFoundError, type Hash } from "viem";
 import { getRpsStore } from "@/lib/rps/store";
 import { resolveIdentity } from "@/lib/rps/session";
-import { getCosmetic } from "@/lib/rps/cosmetics";
+import { getCosmetic, isCosmeticCurrentlyAvailable } from "@/lib/rps/cosmetics";
 import { getShopPriceEth, REQUIRED_CONFIRMATIONS, SHOP_WALLET_ADDRESS } from "@/lib/rps/shop";
+import { CONSOLATION_SHARDS, drawMysteryBoxItem, getMysteryBox } from "@/lib/rps/mysteryBoxes";
 import { toPublicProfile } from "@/lib/rps/name-claim";
 import { mainnetPublicClient } from "@/lib/wallet/public-client";
 
@@ -22,6 +23,12 @@ interface UsedTxRecord {
   status: "pending" | "confirmed";
   itemId: string;
   address: string;
+  /** Only set once status is "confirmed" — what this tx actually granted,
+   * so a retry of the same tx (e.g. a page reload mid-flow) can return the
+   * original result instead of a dead-end "already used" error. For a
+   * mystery box this is what makes the reveal reproducible on retry. */
+  grantedItemId?: string;
+  grantedShards?: number;
 }
 
 function usedTxKey(txHash: string): string {
@@ -51,9 +58,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const cosmetic = getCosmetic(itemId);
-  if (!cosmetic || cosmetic.unlockMethod !== "purchase") {
+  // A mystery box isn't a cosmetic — it's a purchasable *action* that grants
+  // one. itemId resolves to exactly one of the two.
+  const mysteryBox = getMysteryBox(itemId);
+  const cosmetic = mysteryBox ? undefined : getCosmetic(itemId);
+  if (!mysteryBox && (!cosmetic || cosmetic.unlockMethod !== "purchase")) {
     return NextResponse.json({ error: "That item isn't purchasable." }, { status: 400 });
+  }
+  if (cosmetic && !isCosmeticCurrentlyAvailable(cosmetic)) {
+    return NextResponse.json({ error: "That item is no longer available for purchase." }, { status: 400 });
   }
   const priceEth = getShopPriceEth(itemId);
   if (!priceEth) {
@@ -64,9 +77,11 @@ export async function POST(req: NextRequest) {
   const address = identity.address.toLowerCase();
 
   // Already owned — nothing to verify, just confirm success (idempotent;
-  // e.g. the client retrying after a dropped response).
+  // e.g. the client retrying after a dropped response). Doesn't apply to
+  // mystery boxes — they aren't things you "own", each purchase is a fresh
+  // draw.
   const existingProfile = await store.getOrCreatePlayer(identity);
-  if (existingProfile.unlockedCosmetics.includes(itemId)) {
+  if (cosmetic && existingProfile.unlockedCosmetics.includes(itemId)) {
     return NextResponse.json({ ok: true, profile: toPublicProfile(existingProfile) });
   }
 
@@ -79,6 +94,18 @@ export async function POST(req: NextRequest) {
     const record: UsedTxRecord | null = raw ? JSON.parse(raw) : null;
 
     if (record?.status === "confirmed") {
+      if (record.itemId === itemId && record.address === address) {
+        // This exact claim already went through (e.g. a reloaded page
+        // re-polling) — return the same result rather than a dead end.
+        const profile = await store.getOrCreatePlayer(identity);
+        return NextResponse.json({
+          ok: true,
+          profile: toPublicProfile(profile),
+          mysteryBox: mysteryBox
+            ? { grantedItemId: record.grantedItemId ?? null, grantedShards: record.grantedShards ?? 0 }
+            : undefined,
+        });
+      }
       return NextResponse.json(
         { error: "This transaction has already been used to unlock an item." },
         { status: 409 }
@@ -152,16 +179,44 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // All checks passed — lock this tx hash to this exact claim permanently,
-  // then grant the cosmetic.
-  const confirmedRecord: UsedTxRecord = { status: "confirmed", itemId, address };
-  await store.set(lockKey, JSON.stringify(confirmedRecord), CONFIRMED_TTL_SECONDS);
-
+  // All checks passed — grant the item, then lock this tx hash to this
+  // exact claim (with what it granted) permanently.
   const profile = await store.getOrCreatePlayer(identity);
+
+  if (mysteryBox) {
+    const grantedItemId = drawMysteryBoxItem(mysteryBox, profile.unlockedCosmetics);
+    let grantedShards = 0;
+    if (grantedItemId) {
+      profile.unlockedCosmetics.push(grantedItemId);
+    } else {
+      grantedShards = CONSOLATION_SHARDS;
+      profile.shards += CONSOLATION_SHARDS;
+    }
+    await store.savePlayer(profile);
+
+    const confirmedRecord: UsedTxRecord = {
+      status: "confirmed",
+      itemId,
+      address,
+      grantedItemId: grantedItemId ?? undefined,
+      grantedShards,
+    };
+    await store.set(lockKey, JSON.stringify(confirmedRecord), CONFIRMED_TTL_SECONDS);
+
+    return NextResponse.json({
+      ok: true,
+      profile: toPublicProfile(profile),
+      mysteryBox: { grantedItemId, grantedShards },
+    });
+  }
+
   if (!profile.unlockedCosmetics.includes(itemId)) {
     profile.unlockedCosmetics.push(itemId);
     await store.savePlayer(profile);
   }
+
+  const confirmedRecord: UsedTxRecord = { status: "confirmed", itemId, address, grantedItemId: itemId };
+  await store.set(lockKey, JSON.stringify(confirmedRecord), CONFIRMED_TTL_SECONDS);
 
   return NextResponse.json({ ok: true, profile: toPublicProfile(profile) });
 }

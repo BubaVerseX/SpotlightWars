@@ -5,7 +5,13 @@ import { HandIcon } from "./HandIcon";
 import { VictoryAnimation } from "./VictoryAnimation";
 import { MatchIntroOverlay } from "./MatchIntroOverlay";
 import { BannerPreview } from "./BannerPreview";
+import { ArenaBackdrop } from "./ArenaBackdrop";
+import { VsScreenOverlay } from "./VsScreenOverlay";
+import { LeaderboardFramePreview } from "./LeaderboardFramePreview";
+import { PlayerAvatar } from "./PlayerAvatar";
+import { AURA_CLASS } from "./PlayerBadge";
 import { getCosmetic, type CosmeticCategory } from "@/lib/rps/cosmetics";
+import { previewSound } from "@/lib/rps/sound";
 
 // Animations and intros are one-shot CSS animations (fill-mode: forwards) —
 // fine mid-match, but a shop card just showing a frozen end-frame forever
@@ -21,7 +27,7 @@ interface CosmeticPreviewProps {
 
 export function CosmeticPreview({ id, category, size = "md" }: CosmeticPreviewProps) {
   const [replayKey, setReplayKey] = useState(0);
-  const needsReplay = category === "animation" || category === "intro";
+  const needsReplay = category === "animation" || category === "intro" || category === "vsEffect";
   const heightClass = size === "lg" ? "h-24" : "h-16";
 
   useEffect(() => {
@@ -29,6 +35,58 @@ export function CosmeticPreview({ id, category, size = "md" }: CosmeticPreviewPr
     const interval = setInterval(() => setReplayKey((k) => k + 1), REPLAY_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [needsReplay]);
+
+  if (category === "arenaTheme") {
+    return (
+      <div className={`relative ${heightClass} overflow-hidden rounded bg-background`}>
+        <ArenaBackdrop arenaThemeId={id} contained />
+      </div>
+    );
+  }
+
+  if (category === "aura") {
+    return (
+      <div className={`flex ${heightClass} items-center justify-center`}>
+        <span className={`rps-aura-wrap ${AURA_CLASS[id] ?? ""}`}>
+          <PlayerAvatar name="?" size={size === "lg" ? 44 : 32} />
+        </span>
+      </div>
+    );
+  }
+
+  if (category === "vsEffect") {
+    return (
+      <div className={`relative ${heightClass} overflow-hidden rounded bg-background`}>
+        <VsScreenOverlay key={replayKey} vsEffectId={id} myName="You" opponentName="Rival" contained />
+      </div>
+    );
+  }
+
+  if (category === "soundPack") {
+    const cosmetic = getCosmetic(id);
+    return (
+      <button
+        type="button"
+        onClick={() => previewSound(id)}
+        className={`flex w-full ${heightClass} flex-col items-center justify-center gap-1 font-display text-xs uppercase tracking-wide`}
+        style={{ color: "var(--neon-cyan)" }}
+        title="Play a sample"
+      >
+        <span className="text-2xl">▶</span>
+        <span>{cosmetic?.name ?? "Preview"}</span>
+      </button>
+    );
+  }
+
+  if (category === "leaderboardFrame") {
+    return (
+      <LeaderboardFramePreview frameId={id} className={`${heightClass} rounded`}>
+        <div className={`flex ${heightClass} items-center justify-center rounded bg-background-elevated`}>
+          <span className="text-xs text-muted">Row Preview</span>
+        </div>
+      </LeaderboardFramePreview>
+    );
+  }
 
   if (category === "skin") {
     return (
@@ -74,8 +132,10 @@ export function CosmeticPreview({ id, category, size = "md" }: CosmeticPreviewPr
   // "title"
   return (
     <div
-      className={`flex ${heightClass} items-center justify-center font-display font-bold uppercase tracking-wide ${size === "lg" ? "text-2xl" : "text-lg"}`}
-      style={{ color: cosmetic?.color ?? "var(--foreground)" }}
+      className={`flex ${heightClass} items-center justify-center font-display font-bold uppercase tracking-wide ${size === "lg" ? "text-2xl" : "text-lg"} ${
+        cosmetic?.exclusive ? "rps-title-exclusive" : ""
+      }`}
+      style={cosmetic?.exclusive ? undefined : { color: cosmetic?.color ?? "var(--foreground)" }}
     >
       {cosmetic?.name}
     </div>

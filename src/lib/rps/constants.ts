@@ -8,6 +8,10 @@ export const RPS_TAUNT_EVENT = "rps:taunt";
 export const RPS_NAME_STORAGE_KEY = "rps:display-name";
 export const RPS_CLAIM_TOKEN_STORAGE_KEY = "rps:claim-token";
 export const MAX_NAME_LENGTH = 24;
+/** localStorage key for the sound on/off preference — shared between
+ * SettingsPage.tsx (writes it) and sound.ts (reads it before playing). */
+export const SOUND_PREF_KEY = "rps:sound-enabled";
+export const MAX_CUSTOM_TAUNT_LENGTH = 24;
 
 export const COUNTDOWN_SECONDS = 3;
 export const CHOOSE_SECONDS = 10;
@@ -23,6 +27,9 @@ export const TAUNT_DISPLAY_MS = 2200;
 /** How long a match-intro flourish plays before the room settles into its
  * normal state — kept short by design so it never delays match start. */
 export const MATCH_INTRO_DURATION_MS = 1400;
+/** How long the VS-screen clash effect plays, shown alongside the match
+ * intro — same "never delays anything" design. */
+export const VS_EFFECT_DURATION_MS = 1400;
 
 export function rpsMatchChannel(matchId: string): string {
   return `${RPS_CHANNEL_PREFIX}${matchId}`;

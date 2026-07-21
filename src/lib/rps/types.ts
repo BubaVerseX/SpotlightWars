@@ -69,6 +69,30 @@ export interface PlayerProfile {
    * skins/animations/titles, avatars aren't achievement-gated — every id in
    * AVATARS is available to everyone from the start. */
   equippedAvatar: string | null;
+  /** Match-room background/environment. `null` means the plain default. */
+  equippedArenaTheme: string | null;
+  /** Glow/ring/particle effect shown around this player's name+avatar during
+   * a match — visible to the opponent too (threaded through Pusher presence,
+   * unlike most of the fields below). `null` means no aura. */
+  equippedAura: string | null;
+  /** Alternate "you vs opponent" clash animation played at match start,
+   * alongside (not replacing) equippedIntro. `null` means the plain default. */
+  equippedVsEffect: string | null;
+  /** Always has a value — every player has at least the free default pack,
+   * mirroring equippedSkin/equippedAnimation. */
+  equippedSoundPack: string;
+  /** Decorative animated border around this player's leaderboard row,
+   * visible to everyone browsing the leaderboard. `null` means none. */
+  equippedLeaderboardFrame: string | null;
+  /** Player-authored taunt text, only settable once "taunt:custom" is
+   * unlocked. Filtered + length-capped server-side at save time (see
+   * profanity.ts) — never re-validated at send time, the stored value is
+   * already trusted. `null` means not set (or unlock not owned). */
+  customTaunt: string | null;
+  /** Lightweight consolation currency, currently only granted when a mystery
+   * box's pool is fully owned already. Not spendable anywhere yet — just
+   * tracked and displayed. */
+  shards: number;
   achievementProgress: Record<string, number>;
   vsComputer: VsComputerStats;
 }

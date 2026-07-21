@@ -6,6 +6,7 @@ import { NameGate } from "./NameGate";
 import { WalletConnect } from "./WalletConnect";
 import { BannerPreview } from "./BannerPreview";
 import { PlayerAvatar } from "./PlayerAvatar";
+import { CustomTauntEditor } from "./CustomTauntEditor";
 import { useRpsIdentity } from "@/lib/rps/use-identity";
 import type { PlayerProfile } from "@/lib/rps/types";
 import {
@@ -71,7 +72,17 @@ export function ProfilePage() {
   };
 
   const equip = async (
-    field: "equippedSkin" | "equippedAnimation" | "equippedTitle" | "equippedBanner" | "equippedIntro",
+    field:
+      | "equippedSkin"
+      | "equippedAnimation"
+      | "equippedTitle"
+      | "equippedBanner"
+      | "equippedIntro"
+      | "equippedArenaTheme"
+      | "equippedAura"
+      | "equippedVsEffect"
+      | "equippedSoundPack"
+      | "equippedLeaderboardFrame",
     value: string | null
   ) => {
     if (!name) return;
@@ -199,6 +210,15 @@ export function ProfilePage() {
           </div>
         </div>
 
+        {profile.shards > 0 && (
+          <p className="text-center text-xs text-muted">
+            <span className="font-display font-semibold" style={{ color: "var(--neon-gold)" }}>
+              {profile.shards} Shards
+            </span>{" "}
+            — consolation currency from mystery boxes
+          </p>
+        )}
+
         <div>
           <p className="mb-1 text-center text-xs uppercase tracking-[0.3em] text-muted">
             Practice Mode (vs Computer)
@@ -261,31 +281,89 @@ export function ProfilePage() {
           onEquip={(id) => equip("equippedIntro", id)}
           allowNone
         />
+        <CosmeticSection
+          title="Arena Theme"
+          category="arenaTheme"
+          equipped={profile.equippedArenaTheme}
+          unlocked={profile.unlockedCosmetics}
+          onEquip={(id) => equip("equippedArenaTheme", id)}
+          allowNone
+        />
+        <CosmeticSection
+          title="Player Aura"
+          category="aura"
+          equipped={profile.equippedAura}
+          unlocked={profile.unlockedCosmetics}
+          onEquip={(id) => equip("equippedAura", id)}
+          allowNone
+        />
+        <CosmeticSection
+          title="VS-Screen Effect"
+          category="vsEffect"
+          equipped={profile.equippedVsEffect}
+          unlocked={profile.unlockedCosmetics}
+          onEquip={(id) => equip("equippedVsEffect", id)}
+          allowNone
+        />
+        <CosmeticSection
+          title="Sound Pack"
+          category="soundPack"
+          equipped={profile.equippedSoundPack}
+          unlocked={profile.unlockedCosmetics}
+          onEquip={(id) => equip("equippedSoundPack", id)}
+        />
+        <CosmeticSection
+          title="Leaderboard Frame"
+          category="leaderboardFrame"
+          equipped={profile.equippedLeaderboardFrame}
+          unlocked={profile.unlockedCosmetics}
+          onEquip={(id) => equip("equippedLeaderboardFrame", id)}
+          allowNone
+        />
 
         <div>
           <p className="mb-3 text-center text-xs uppercase tracking-[0.3em] text-muted">
             Taunts — usable between rounds in any match
           </p>
           <div className="flex flex-wrap justify-center gap-2">
-            {getCosmeticsByCategory("taunt").map((taunt) => {
-              const isUnlocked = profile.unlockedCosmetics.includes(taunt.id);
-              return (
-                <span
-                  key={taunt.id}
-                  title={taunt.description}
-                  className={`rounded-lg border px-3 py-2 font-display text-sm ${
-                    isUnlocked
-                      ? "border-border bg-background-elevated"
-                      : "border-border bg-background-elevated opacity-40"
-                  }`}
-                >
-                  {taunt.name}
-                  {!isUnlocked && <span className="ml-1">🔒</span>}
-                </span>
-              );
-            })}
+            {getCosmeticsByCategory("taunt")
+              .filter((taunt) => taunt.id !== "taunt:custom")
+              .map((taunt) => {
+                const isUnlocked = profile.unlockedCosmetics.includes(taunt.id);
+                return (
+                  <span
+                    key={taunt.id}
+                    title={taunt.description}
+                    className={`rounded-lg border px-3 py-2 font-display text-sm ${
+                      isUnlocked
+                        ? "border-border bg-background-elevated"
+                        : "border-border bg-background-elevated opacity-40"
+                    }`}
+                  >
+                    {taunt.name}
+                    {!isUnlocked && <span className="ml-1">🔒</span>}
+                  </span>
+                );
+              })}
           </div>
         </div>
+
+        {profile.unlockedCosmetics.includes("taunt:custom") ? (
+          <CustomTauntEditor
+            name={name}
+            claimToken={claimToken}
+            customTaunt={profile.customTaunt}
+            onSaved={(customTaunt) => setProfile((prev) => (prev ? { ...prev, customTaunt } : prev))}
+          />
+        ) : (
+          <p className="text-center text-xs text-muted">
+            🔒 Custom Taunt unlock available in the{" "}
+            <Link href="/shop" className="underline-offset-2 hover:text-accent hover:underline">
+              shop
+            </Link>{" "}
+            — type your own short message instead of picking from the presets.
+          </p>
+        )}
 
         <AngledDivider color="gold" />
 

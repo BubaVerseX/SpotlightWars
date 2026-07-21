@@ -1,7 +1,27 @@
 import type { AiDifficulty, PlayerProfile, VsComputerStats } from "./types";
 import { shortenAddress } from "./wallet";
 
-export type CosmeticCategory = "skin" | "animation" | "title" | "banner" | "intro" | "taunt";
+export type CosmeticCategory =
+  | "skin"
+  | "animation"
+  | "title"
+  | "banner"
+  | "intro"
+  | "taunt"
+  | "arenaTheme"
+  | "aura"
+  | "vsEffect"
+  | "soundPack"
+  | "leaderboardFrame";
+
+/** A cosmetic only purchasable within a date window. Already-owned copies
+ * stay owned/equippable forever — this only gates *new* purchases (checked
+ * both client-side for display and server-side in verify-purchase, which is
+ * the actual security boundary). */
+export interface CosmeticAvailability {
+  startsAt: string;
+  endsAt: string;
+}
 
 export interface CosmeticDefinition {
   id: string;
@@ -12,6 +32,12 @@ export interface CosmeticDefinition {
   achievementId?: string;
   /** Only set for "title" cosmetics — recolors the player's name. */
   color?: string;
+  /** Purchase-only titles that are never obtainable via achievements — get a
+   * distinct gilded treatment wherever titles render, so they read as "this
+   * person paid" rather than "this person earned it". */
+  exclusive?: boolean;
+  /** Present only on seasonal/limited-time drops — see isCosmeticCurrentlyAvailable. */
+  availability?: CosmeticAvailability;
 }
 
 export interface AchievementDefinition {
@@ -26,6 +52,7 @@ export interface AchievementDefinition {
 
 export const DEFAULT_SKIN = "skin:default";
 export const DEFAULT_ANIMATION = "animation:default";
+export const DEFAULT_SOUND_PACK = "soundPack:default";
 
 export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
@@ -387,6 +414,204 @@ export const COSMETICS: CosmeticDefinition[] = [
     unlockMethod: "achievement",
     achievementId: "thirty-wins",
   },
+
+  // --- Custom taunt unlock (a capability, not a preset message — see
+  // profile.customTaunt and profanity.ts) ---
+  {
+    id: "taunt:custom",
+    category: "taunt",
+    name: "Custom Taunt",
+    description: "Unlocks a taunt slot for your own short message (set it on your profile page).",
+    unlockMethod: "purchase",
+  },
+
+  // --- Arena themes (match-room background/environment, local to each
+  // viewer — not synced with the opponent) ---
+  {
+    id: "arenaTheme:cyberGrid",
+    category: "arenaTheme",
+    name: "Cyber Grid",
+    description: "A wireframe grid floor stretching into a neon horizon.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "arenaTheme:volcanicCore",
+    category: "arenaTheme",
+    name: "Volcanic Core",
+    description: "Molten rock glows beneath a cracked obsidian floor.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "arenaTheme:deepSpace",
+    category: "arenaTheme",
+    name: "Deep Space",
+    description: "A slow drift of stars and distant nebulae.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "arenaTheme:neonCity",
+    category: "arenaTheme",
+    name: "Neon City",
+    description: "Rain-slicked rooftops under a skyline of flickering signs.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "arenaTheme:solsticeBloom",
+    category: "arenaTheme",
+    name: "Solstice Bloom",
+    description: "Sunlit petals drift across a warm midsummer haze. A limited-time arena.",
+    unlockMethod: "purchase",
+    availability: { startsAt: "2026-07-01T00:00:00Z", endsAt: "2026-08-15T00:00:00Z" },
+  },
+
+  // --- Player auras (glow/particle effect around name+avatar, visible to
+  // the opponent too — synced via Pusher presence like skins/titles) ---
+  {
+    id: "aura:pulsingRing",
+    category: "aura",
+    name: "Pulsing Ring",
+    description: "A soft ring of light breathes in and out around you.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "aura:particleTrail",
+    category: "aura",
+    name: "Particle Trail",
+    description: "A trail of drifting embers follows your every move.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "aura:lightningAura",
+    category: "aura",
+    name: "Lightning Aura",
+    description: "Static arcs crackle around your name.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "aura:prismHalo",
+    category: "aura",
+    name: "Prism Halo",
+    description: "A slow-rotating halo splits light into shifting color.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "aura:emberSwarm",
+    category: "aura",
+    name: "Ember Swarm",
+    description: "A swarm of tiny embers orbits you, warm and restless. A limited-time aura.",
+    unlockMethod: "purchase",
+    availability: { startsAt: "2026-07-01T00:00:00Z", endsAt: "2026-08-15T00:00:00Z" },
+  },
+
+  // --- VS-screen effects (alternate "you vs opponent" clash animation,
+  // played alongside the existing match intro — see VsScreenOverlay) ---
+  {
+    id: "vsEffect:energyClash",
+    category: "vsEffect",
+    name: "Energy Clash",
+    description: "Two waves of energy collide in the center of the screen.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "vsEffect:lightningCollision",
+    category: "vsEffect",
+    name: "Lightning Collision",
+    description: "Twin bolts of lightning meet in a blinding crack.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "vsEffect:explosiveImpact",
+    category: "vsEffect",
+    name: "Explosive Impact",
+    description: "A concussive shockwave rings out as both names lock in.",
+    unlockMethod: "purchase",
+  },
+
+  // --- Sound packs (see sound.ts — wired into the existing sound toggle) ---
+  {
+    id: DEFAULT_SOUND_PACK,
+    category: "soundPack",
+    name: "Classic Beeps",
+    description: "The original simple beeps.",
+    unlockMethod: "achievement",
+  },
+  {
+    id: "soundPack:arcadeBlips",
+    category: "soundPack",
+    name: "Arcade Blips",
+    description: "Punchy 8-bit blips and chiptune stingers.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "soundPack:retroSynth",
+    category: "soundPack",
+    name: "Retro Synth",
+    description: "Warm analog synth swells and pads.",
+    unlockMethod: "purchase",
+  },
+
+  // --- Leaderboard frames (animated border around a leaderboard row,
+  // visible to everyone browsing the leaderboard) ---
+  {
+    id: "leaderboardFrame:neonCircuit",
+    category: "leaderboardFrame",
+    name: "Neon Circuit",
+    description: "A pulsing circuit-board trace runs the border.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "leaderboardFrame:moltenBorder",
+    category: "leaderboardFrame",
+    name: "Molten Border",
+    description: "A slow-crawling seam of molten light.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "leaderboardFrame:auroraRing",
+    category: "leaderboardFrame",
+    name: "Aurora Ring",
+    description: "A shifting aurora ripple traces the edge.",
+    unlockMethod: "purchase",
+  },
+  {
+    id: "leaderboardFrame:goldenLaurel",
+    category: "leaderboardFrame",
+    name: "Golden Laurel",
+    description: "An animated laurel wreath in polished gold. A limited-time frame.",
+    unlockMethod: "purchase",
+    availability: { startsAt: "2026-07-01T00:00:00Z", endsAt: "2026-08-15T00:00:00Z" },
+  },
+
+  // --- Exclusive rare titles (purchase-only, never earnable via
+  // achievements — get a gilded treatment wherever titles render so they
+  // read as "this person paid" rather than "this person earned it") ---
+  {
+    id: "title:patron",
+    category: "title",
+    name: "Patron",
+    description: "A title that can't be earned — only bought.",
+    unlockMethod: "purchase",
+    exclusive: true,
+    color: "#c9a4ff",
+  },
+  {
+    id: "title:founder",
+    category: "title",
+    name: "Founder",
+    description: "Marks an early supporter of the shop.",
+    unlockMethod: "purchase",
+    exclusive: true,
+    color: "#ffb347",
+  },
+  {
+    id: "title:whale",
+    category: "title",
+    name: "Whale",
+    description: "Reserved for those who went all in.",
+    unlockMethod: "purchase",
+    exclusive: true,
+    color: "#ffe9a8",
+  },
 ];
 
 export function getCosmetic(id: string | null | undefined): CosmeticDefinition | undefined {
@@ -396,6 +621,27 @@ export function getCosmetic(id: string | null | undefined): CosmeticDefinition |
 
 export function getCosmeticsByCategory(category: CosmeticCategory): CosmeticDefinition[] {
   return COSMETICS.filter((c) => c.category === category);
+}
+
+export type SeasonalStatus = "active" | "upcoming" | "expired";
+
+/** `null` for a cosmetic with no `availability` window (i.e. not seasonal at
+ * all) — only seasonal cosmetics have a status. */
+export function getSeasonalStatus(cosmetic: CosmeticDefinition, now: Date = new Date()): SeasonalStatus | null {
+  if (!cosmetic.availability) return null;
+  const t = now.getTime();
+  if (t < new Date(cosmetic.availability.startsAt).getTime()) return "upcoming";
+  if (t > new Date(cosmetic.availability.endsAt).getTime()) return "expired";
+  return "active";
+}
+
+/** Whether this cosmetic can be *newly* purchased right now. Non-seasonal
+ * cosmetics are always available; already-owned seasonal cosmetics stay
+ * owned/equippable forever regardless of this check (callers must check
+ * ownership separately — this only gates new purchases). */
+export function isCosmeticCurrentlyAvailable(cosmetic: CosmeticDefinition, now: Date = new Date()): boolean {
+  const status = getSeasonalStatus(cosmetic, now);
+  return status === null || status === "active";
 }
 
 export function createEmptyVsComputerStats(): VsComputerStats {
@@ -412,6 +658,25 @@ export function ensureVsComputerStats(profile: PlayerProfile): VsComputerStats {
     profile.vsComputer = createEmptyVsComputerStats();
   }
   return profile.vsComputer;
+}
+
+/** Older saved profiles predate the shop-expansion cosmetic fields; back-fill
+ * them in place (called once at load time, in store.ts's getOrCreatePlayer)
+ * so every caller can rely on these always being present, same convention as
+ * ensureVsComputerStats. soundPack:default is also granted here — it's a
+ * free "achievement, no id" cosmetic new profiles get automatically via
+ * createDefaultProfile, but an old profile's unlockedCosmetics predates it. */
+export function backfillNewCosmeticDefaults(profile: PlayerProfile): void {
+  profile.equippedArenaTheme ??= null;
+  profile.equippedAura ??= null;
+  profile.equippedVsEffect ??= null;
+  profile.equippedSoundPack ??= DEFAULT_SOUND_PACK;
+  profile.equippedLeaderboardFrame ??= null;
+  profile.customTaunt ??= null;
+  profile.shards ??= 0;
+  if (!profile.unlockedCosmetics.includes(DEFAULT_SOUND_PACK)) {
+    profile.unlockedCosmetics.push(DEFAULT_SOUND_PACK);
+  }
 }
 
 export function createDefaultProfile(name: string): PlayerProfile {
@@ -441,6 +706,13 @@ export function createDefaultProfile(name: string): PlayerProfile {
     equippedBanner: null,
     equippedIntro: null,
     equippedAvatar: null,
+    equippedArenaTheme: null,
+    equippedAura: null,
+    equippedVsEffect: null,
+    equippedSoundPack: DEFAULT_SOUND_PACK,
+    equippedLeaderboardFrame: null,
+    customTaunt: null,
+    shards: 0,
     achievementProgress: {},
     vsComputer: createEmptyVsComputerStats(),
   };

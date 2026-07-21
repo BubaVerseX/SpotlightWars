@@ -40,6 +40,48 @@ export const SHOP_PRICES: Record<string, string> = {
   "taunt:fire": "0.0002",
   "taunt:tilted": "0.0002",
   "taunt:watchThis": "0.0002",
+
+  // --- Custom taunt unlock ---
+  "taunt:custom": "0.0004",
+
+  // --- Arena themes ---
+  "arenaTheme:cyberGrid": "0.0004",
+  "arenaTheme:volcanicCore": "0.0004",
+  "arenaTheme:deepSpace": "0.0004",
+  "arenaTheme:neonCity": "0.0004",
+  "arenaTheme:solsticeBloom": "0.0005",
+
+  // --- Player auras ---
+  "aura:pulsingRing": "0.0003",
+  "aura:particleTrail": "0.0004",
+  "aura:lightningAura": "0.0005",
+  "aura:prismHalo": "0.0005",
+  "aura:emberSwarm": "0.0006",
+
+  // --- VS-screen effects ---
+  "vsEffect:energyClash": "0.0004",
+  "vsEffect:lightningCollision": "0.0005",
+  "vsEffect:explosiveImpact": "0.0006",
+
+  // --- Sound packs (soundPack:default is free/achievement, no entry here) ---
+  "soundPack:arcadeBlips": "0.0003",
+  "soundPack:retroSynth": "0.0003",
+
+  // --- Leaderboard frames ---
+  "leaderboardFrame:neonCircuit": "0.0004",
+  "leaderboardFrame:moltenBorder": "0.0005",
+  "leaderboardFrame:auroraRing": "0.0005",
+  "leaderboardFrame:goldenLaurel": "0.0007",
+
+  // --- Exclusive rare titles ---
+  "title:patron": "0.0006",
+  "title:founder": "0.0008",
+  "title:whale": "0.0015",
+
+  // --- Mystery boxes (priced at/slightly above their pool's expected
+  // value — see mysteryBoxes.ts for the pool + odds) ---
+  "mysterybox:standard": "0.0004",
+  "mysterybox:premium": "0.0008",
 };
 
 export function getShopPriceEth(cosmeticId: string): string | null {

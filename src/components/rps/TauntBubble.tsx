@@ -7,11 +7,16 @@ interface TauntBubbleProps {
    * the match room. Rendered as a fixed overlay so it never has to fight
    * for layout space inside whichever phase happens to be on screen. */
   align: "self" | "opponent";
+  /** Present only for tauntId "taunt:custom" — the sender's actual message,
+   * broadcast by the server (see /api/rps/taunt), shown instead of the
+   * generic "Custom Taunt" unlock name. */
+  customText?: string | null;
 }
 
-export function TauntBubble({ tauntId, align }: TauntBubbleProps) {
+export function TauntBubble({ tauntId, align, customText }: TauntBubbleProps) {
   const cosmetic = getCosmetic(tauntId);
   if (!cosmetic) return null;
+  const label = tauntId === "taunt:custom" && customText ? customText : cosmetic.name;
 
   return (
     <div
@@ -24,7 +29,7 @@ export function TauntBubble({ tauntId, align }: TauntBubbleProps) {
         boxShadow: `0 0 20px ${align === "self" ? "var(--neon-cyan-soft)" : "var(--neon-magenta-soft)"}`,
       }}
     >
-      {cosmetic.name}
+      {label}
     </div>
   );
 }

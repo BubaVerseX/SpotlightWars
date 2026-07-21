@@ -36,11 +36,13 @@ export async function POST(req: NextRequest) {
   const equippedAnimation = params.get("equippedAnimation");
   const equippedTitle = params.get("equippedTitle");
   const equippedAvatar = params.get("equippedAvatar");
+  const equippedAura = params.get("equippedAura");
   const elo = params.get("elo");
   if (equippedSkin) userInfo.equippedSkin = equippedSkin;
   if (equippedAnimation) userInfo.equippedAnimation = equippedAnimation;
   if (equippedTitle) userInfo.equippedTitle = equippedTitle;
   if (equippedAvatar) userInfo.equippedAvatar = equippedAvatar;
+  if (equippedAura) userInfo.equippedAura = equippedAura;
   if (elo) userInfo.elo = Number(elo);
 
   const authResponse = pusher.authorizeChannel(socketId, channelName, {

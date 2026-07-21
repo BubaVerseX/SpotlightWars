@@ -5,11 +5,15 @@ import Link from "next/link";
 import { useRpsIdentity } from "@/lib/rps/use-identity";
 import { ACHIEVEMENTS, COSMETICS, type CosmeticCategory } from "@/lib/rps/cosmetics";
 import { getShopPriceEth } from "@/lib/rps/shop";
+import { MYSTERY_BOXES } from "@/lib/rps/mysteryBoxes";
 import type { PublicPlayerProfile } from "@/lib/rps/types";
 import { WalletConnect } from "./WalletConnect";
 import { ShopItemCard } from "./ShopItemCard";
+import { MysteryBoxCard } from "./MysteryBoxCard";
 import { AngledDivider } from "./AngledDivider";
 import { Footer } from "@/components/Footer";
+
+const MYSTERY_BOX_TAB = "mysteryBox" as const;
 
 const CATEGORY_TABS: { id: CosmeticCategory; label: string }[] = [
   { id: "skin", label: "Hand Skins" },
@@ -18,12 +22,17 @@ const CATEGORY_TABS: { id: CosmeticCategory; label: string }[] = [
   { id: "banner", label: "Profile Banners" },
   { id: "intro", label: "Match Intros" },
   { id: "taunt", label: "Taunts" },
+  { id: "arenaTheme", label: "Arena Themes" },
+  { id: "aura", label: "Player Auras" },
+  { id: "vsEffect", label: "VS-Screen Effects" },
+  { id: "soundPack", label: "Sound Packs" },
+  { id: "leaderboardFrame", label: "Leaderboard Frames" },
 ];
 
 export function ShopPage() {
   const { name, claimToken, loading, isWalletVerified, walletAddress, refreshSession } = useRpsIdentity();
   const [profile, setProfile] = useState<PublicPlayerProfile | null>(null);
-  const [category, setCategory] = useState<CosmeticCategory>("skin");
+  const [category, setCategory] = useState<CosmeticCategory | typeof MYSTERY_BOX_TAB>("skin");
   const [ethUsdRate, setEthUsdRate] = useState<number | null>(null);
 
   useEffect(() => {
@@ -49,7 +58,7 @@ export function ShopPage() {
       .catch(() => {});
   }, []);
 
-  const itemsInCategory = COSMETICS.filter((c) => c.category === category);
+  const itemsInCategory = category === MYSTERY_BOX_TAB ? [] : COSMETICS.filter((c) => c.category === category);
 
   return (
     <>
@@ -92,6 +101,17 @@ export function ShopPage() {
               {tab.label}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setCategory(MYSTERY_BOX_TAB)}
+            className={`rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-wide transition ${
+              category === MYSTERY_BOX_TAB
+                ? "arcade-btn-solid"
+                : "border border-border bg-background-elevated text-muted hover:border-[var(--neon-cyan)] hover:text-foreground"
+            }`}
+          >
+            Mystery Boxes
+          </button>
         </div>
 
         {!name ? (
@@ -101,6 +121,22 @@ export function ShopPage() {
             </Link>{" "}
             on the home page to see your unlock progress here.
           </p>
+        ) : category === MYSTERY_BOX_TAB ? (
+          <>
+            <AngledDivider color="magenta" size="sm" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {MYSTERY_BOXES.map((box) => (
+                <MysteryBoxCard
+                  key={box.id}
+                  box={box}
+                  ethUsdRate={ethUsdRate}
+                  isWalletVerified={isWalletVerified}
+                  verifiedAddress={walletAddress}
+                  onUnlocked={setProfile}
+                />
+              ))}
+            </div>
+          </>
         ) : (
           <>
             <AngledDivider color="magenta" size="sm" />

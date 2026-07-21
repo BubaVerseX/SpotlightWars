@@ -1,7 +1,41 @@
-import type { AchievementDefinition, CosmeticDefinition } from "@/lib/rps/cosmetics";
+import { useEffect, useState } from "react";
+import { getSeasonalStatus, type AchievementDefinition, type CosmeticDefinition } from "@/lib/rps/cosmetics";
 import type { PublicPlayerProfile } from "@/lib/rps/types";
 import { CosmeticPreview } from "./CosmeticPreview";
 import { BuyButton } from "./BuyButton";
+
+/** Live "Xd Yh left" / "Xm Ys left" countdown to a seasonal item's endsAt,
+ * ticking every second — only mounted on visible cards, so the cost is
+ * bounded to whatever's on screen. */
+function useCountdown(endsAt: string | undefined, active: boolean): string | null {
+  const [label, setLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!endsAt || !active) {
+      setLabel(null);
+      return;
+    }
+    const update = () => {
+      const diffMs = new Date(endsAt).getTime() - Date.now();
+      if (diffMs <= 0) {
+        setLabel("Ending...");
+        return;
+      }
+      const days = Math.floor(diffMs / 86_400_000);
+      const hours = Math.floor((diffMs % 86_400_000) / 3_600_000);
+      const minutes = Math.floor((diffMs % 3_600_000) / 60_000);
+      const seconds = Math.floor((diffMs % 60_000) / 1000);
+      if (days > 0) setLabel(`${days}d ${hours}h left`);
+      else if (hours > 0) setLabel(`${hours}h ${minutes}m left`);
+      else setLabel(`${minutes}m ${seconds}s left`);
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [endsAt, active]);
+
+  return label;
+}
 
 interface ShopItemCardProps {
   cosmetic: CosmeticDefinition;
@@ -29,6 +63,9 @@ export function ShopItemCard({
   featured = false,
 }: ShopItemCardProps) {
   const usdEstimate = priceEth && ethUsdRate ? (parseFloat(priceEth) * ethUsdRate).toFixed(2) : null;
+  const seasonalStatus = getSeasonalStatus(cosmetic);
+  const countdown = useCountdown(cosmetic.availability?.endsAt, seasonalStatus === "active");
+  const expiredAndLocked = seasonalStatus === "expired" && !isUnlocked;
 
   return (
     <div
@@ -46,6 +83,11 @@ export function ShopItemCard({
           }}
         >
           Featured
+        </span>
+      )}
+      {seasonalStatus && (
+        <span className="rps-limited-badge absolute left-2 top-2 z-[2] rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide">
+          Limited Time
         </span>
       )}
       <div className={featured ? "flex justify-center" : undefined}>
@@ -77,6 +119,12 @@ export function ShopItemCard({
             {achievement && ` — ${Math.min(achievementProgress, achievement.target)}/${achievement.target}`}
           </p>
         </div>
+      ) : expiredAndLocked ? (
+        <div className="border-t border-border pt-3 text-center">
+          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--neon-magenta)" }}>
+            No longer available
+          </p>
+        </div>
       ) : (
         <div className="flex flex-col items-center gap-2 border-t border-border pt-3">
           <p className="text-sm">
@@ -85,6 +133,11 @@ export function ShopItemCard({
             </span>
             {usdEstimate && <span className="ml-1.5 text-xs text-muted">(≈ ${usdEstimate})</span>}
           </p>
+          {countdown && (
+            <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--neon-gold)" }}>
+              {countdown}
+            </p>
+          )}
           {!isWalletVerified ? (
             <p className="text-center text-xs text-muted">Connect wallet to purchase</p>
           ) : priceEth && verifiedAddress ? (

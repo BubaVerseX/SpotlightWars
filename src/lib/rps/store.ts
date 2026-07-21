@@ -1,5 +1,5 @@
 import { Redis } from "@upstash/redis";
-import { createDefaultProfile, createDefaultWalletProfile } from "./cosmetics";
+import { backfillNewCosmeticDefaults, createDefaultProfile, createDefaultWalletProfile } from "./cosmetics";
 import type { MoveEntry, PlayerIdentity, PlayerProfile } from "./types";
 
 function movesKey(matchId: string): string {
@@ -150,7 +150,11 @@ class MemoryRpsStore implements RpsStore {
   async getOrCreatePlayer(identity: PlayerIdentity) {
     const key = keyForIdentity(identity);
     const existing = this.players.get(key);
-    if (existing) return structuredClone(existing);
+    if (existing) {
+      const cloned = structuredClone(existing);
+      backfillNewCosmeticDefaults(cloned);
+      return cloned;
+    }
     const fresh = createProfileForIdentity(identity);
     this.players.set(key, structuredClone(fresh));
     return structuredClone(fresh);
@@ -263,7 +267,10 @@ class KvRpsStore implements RpsStore {
   async getOrCreatePlayer(identity: PlayerIdentity) {
     const key = keyForIdentity(identity);
     const existing = await this.redis.get<PlayerProfile>(key);
-    if (existing) return existing;
+    if (existing) {
+      backfillNewCosmeticDefaults(existing);
+      return existing;
+    }
     const fresh = createProfileForIdentity(identity);
     await this.savePlayer(fresh);
     return fresh;

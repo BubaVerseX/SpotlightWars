@@ -11,6 +11,7 @@ interface RpsAuthProfile {
   equippedAnimation: string;
   equippedTitle: string | null;
   equippedAvatar: string | null;
+  equippedAura: string | null;
   elo: number;
 }
 
@@ -20,6 +21,7 @@ let currentProfile: RpsAuthProfile = {
   equippedAnimation: "",
   equippedTitle: null,
   equippedAvatar: null,
+  equippedAura: null,
   elo: 1000,
 };
 
@@ -69,6 +71,9 @@ export function getRpsPusherClient(): PusherClient | null {
           }
           if (currentProfile.equippedAvatar) {
             params.equippedAvatar = currentProfile.equippedAvatar;
+          }
+          if (currentProfile.equippedAura) {
+            params.equippedAura = currentProfile.equippedAura;
           }
 
           fetch("/api/pusher/auth", {

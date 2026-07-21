@@ -7,6 +7,8 @@ import { useRpsIdentity } from "@/lib/rps/use-identity";
 import { useBumpHeaderRefresh } from "@/lib/rps/header-refresh-context";
 import { AVATARS } from "@/lib/rps/avatars";
 import { shortenAddress } from "@/lib/rps/wallet";
+import { SOUND_PREF_KEY } from "@/lib/rps/constants";
+import { previewSound } from "@/lib/rps/sound";
 import type { PlayerProfile } from "@/lib/rps/types";
 import { NameGate } from "./NameGate";
 import { WalletConnect } from "./WalletConnect";
@@ -15,7 +17,6 @@ import { AvatarIcon } from "./AvatarIcon";
 import { AngledDivider } from "./AngledDivider";
 import { Footer } from "@/components/Footer";
 
-const SOUND_PREF_KEY = "rps:sound-enabled";
 const AUTO_AVATAR_KEY = "__auto__";
 
 export function SettingsPage() {
@@ -67,6 +68,7 @@ export function SettingsPage() {
     const next = !soundEnabled;
     setSoundEnabled(next);
     window.localStorage.setItem(SOUND_PREF_KEY, next ? "on" : "off");
+    if (next) previewSound(profile?.equippedSoundPack);
   };
 
   const handleEquipAvatar = async (avatarId: string | null) => {
@@ -180,7 +182,8 @@ export function SettingsPage() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-foreground">Sound Effects</p>
             <p className="text-xs text-muted">
-              No sounds are wired up yet — this just saves your preference for later.
+              Plays your equipped sound pack on moves, round results, and match end. Pick a pack in
+              your <Link href="/profile" className="underline-offset-2 hover:text-accent hover:underline">profile</Link>.
             </p>
           </div>
           <button

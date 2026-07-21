@@ -10,11 +10,13 @@ import {
   NEXT_ROUND_DELAY_MS,
   REVEAL_DURATION_MS,
   ROUNDS_TO_WIN,
+  VS_EFFECT_DURATION_MS,
 } from "@/lib/rps/constants";
 import { decideWinner } from "@/lib/rps/game";
 import { AI_DIFFICULTY_LABEL, pickAiMove } from "@/lib/rps/ai";
 import { useRpsIdentity } from "@/lib/rps/use-identity";
 import { createDefaultProfile, DEFAULT_SKIN } from "@/lib/rps/cosmetics";
+import { playSound } from "@/lib/rps/sound";
 import type { AiDifficulty, Move, PlayerProfile } from "@/lib/rps/types";
 import { MoveButton } from "./MoveButton";
 import { RevealStage } from "./RevealStage";
@@ -24,6 +26,8 @@ import { ScoreTracker } from "./ScoreTracker";
 import { PlayerBadge } from "./PlayerBadge";
 import { VictoryAnimation } from "./VictoryAnimation";
 import { MatchIntroOverlay } from "./MatchIntroOverlay";
+import { VsScreenOverlay } from "./VsScreenOverlay";
+import { ArenaBackdrop } from "./ArenaBackdrop";
 import { UnlockToast } from "./UnlockToast";
 import { Footer } from "@/components/Footer";
 
@@ -53,6 +57,7 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
   const [roundKey, setRoundKey] = useState(0);
   const [resultSaved, setResultSaved] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const [showVsEffect, setShowVsEffect] = useState(false);
 
   const myMoveRef = useRef<Move | null>(null);
   const aiMoveRef = useRef<Move | null>(null);
@@ -60,6 +65,8 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
   const myScoreRef = useRef(0);
   const aiScoreRef = useRef(0);
   const introShownRef = useRef(false);
+  const vsEffectShownRef = useRef(false);
+  const soundPackRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     myMoveRef.current = myMove;
@@ -70,6 +77,9 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
   useEffect(() => {
     aiScoreRef.current = aiScore;
   }, [aiScore]);
+  useEffect(() => {
+    soundPackRef.current = myProfile?.equippedSoundPack;
+  }, [myProfile?.equippedSoundPack]);
 
   // Load my profile for cosmetics display — ELO is never read from or
   // written back to here, since vs-computer matches don't affect it.
@@ -101,6 +111,15 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
     return () => clearTimeout(timer);
   }, [myProfile]);
 
+  // Same one-shot convention, for this player's equipped VS-screen effect.
+  useEffect(() => {
+    if (!myProfile || vsEffectShownRef.current) return;
+    vsEffectShownRef.current = true;
+    setShowVsEffect(true);
+    const timer = setTimeout(() => setShowVsEffect(false), VS_EFFECT_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [myProfile]);
+
   // Pick the AI's move the moment a round begins, from completed-round
   // history only — the player hasn't chosen anything yet at this point, so
   // no difficulty tier can be "peeking" at the in-progress round.
@@ -124,8 +143,12 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
     setMyScore(nextMyScore);
     setAiScore(nextAiScore);
 
-    if (nextMyScore >= ROUNDS_TO_WIN || nextAiScore >= ROUNDS_TO_WIN) {
+    const matchJustEnded = nextMyScore >= ROUNDS_TO_WIN || nextAiScore >= ROUNDS_TO_WIN;
+    if (matchJustEnded) {
       setMatchOutcome(nextMyScore > nextAiScore ? "win" : "lose");
+      playSound(nextMyScore > nextAiScore ? "matchWin" : "matchLose", soundPackRef.current);
+    } else if (outcome !== "draw") {
+      playSound(outcome === "win" ? "roundWin" : "roundLose", soundPackRef.current);
     }
 
     setPhase("revealing");
@@ -135,6 +158,7 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
     (move: Move) => {
       if (myMoveRef.current) return;
       setMyMove(move);
+      playSound("moveSelect", soundPackRef.current);
       resolveRound(move);
     },
     [resolveRound]
@@ -259,6 +283,7 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
 
   return (
     <>
+      <ArenaBackdrop arenaThemeId={myProfile?.equippedArenaTheme} />
       <main className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-16 text-center">
         <div className="arcade-panel-magenta inline-flex items-center gap-2 rounded-full px-4 py-1">
           <span
@@ -281,6 +306,7 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
                 elo={myProfile?.elo}
                 equippedTitle={myProfile?.equippedTitle}
                 equippedAvatar={myProfile?.equippedAvatar}
+                equippedAura={myProfile?.equippedAura}
                 walletAddress={myProfile?.walletAddress}
                 variant="self"
               />
@@ -363,6 +389,9 @@ export function ComputerMatchRoom({ difficulty }: { difficulty: AiDifficulty }) 
       <Footer />
       <UnlockToast cosmeticIds={newUnlocks} onDismiss={() => setNewUnlocks([])} />
       {showIntro && <MatchIntroOverlay introId={myProfile?.equippedIntro} />}
+      {showVsEffect && (
+        <VsScreenOverlay vsEffectId={myProfile?.equippedVsEffect} myName={name} opponentName={aiName} />
+      )}
     </>
   );
 }
