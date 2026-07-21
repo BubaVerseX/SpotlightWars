@@ -138,88 +138,97 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
 
   return (
     <>
-      <main className="flex flex-1 flex-col items-center justify-center gap-10 px-6 py-16">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted">Welcome back</p>
-          <PlayerBadge
-            name={name}
-            elo={profile?.elo}
-            equippedTitle={profile?.equippedTitle}
-            equippedAvatar={profile?.equippedAvatar}
-            walletAddress={profile?.walletAddress}
-          />
-          <div className="flex items-center gap-3 text-xs text-muted">
-            <Link href="/profile" className="underline-offset-2 hover:text-accent hover:underline">
-              View profile &amp; cosmetics
-            </Link>
-            <span>·</span>
-            <Link href="/shop" className="underline-offset-2 hover:text-accent hover:underline">
-              Shop
-            </Link>
-            {!isWalletVerified && (
-              <>
-                <span>·</span>
-                <button
-                  type="button"
-                  onClick={clearName}
-                  className="underline-offset-2 hover:text-accent hover:underline"
-                >
-                  Not you? Change name
-                </button>
-              </>
-            )}
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center gap-10 px-6 py-16 lg:flex-row lg:items-start lg:justify-center lg:gap-10">
+        {/* Primary column — game mode buttons stay the centered focus at
+            every width; the leaderboard becomes a right-side rail only once
+            there's room for it (lg+), and falls back to stacking below on
+            narrower screens. */}
+        <div className="flex w-full max-w-sm flex-col items-center gap-10">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <p className="text-xs uppercase tracking-[0.3em] text-muted">Welcome back</p>
+            <PlayerBadge
+              name={name}
+              elo={profile?.elo}
+              equippedTitle={profile?.equippedTitle}
+              equippedAvatar={profile?.equippedAvatar}
+              walletAddress={profile?.walletAddress}
+            />
+            <div className="flex items-center gap-3 text-xs text-muted">
+              <Link href="/profile" className="underline-offset-2 hover:text-accent hover:underline">
+                View profile &amp; cosmetics
+              </Link>
+              <span>·</span>
+              <Link href="/shop" className="underline-offset-2 hover:text-accent hover:underline">
+                Shop
+              </Link>
+              {!isWalletVerified && (
+                <>
+                  <span>·</span>
+                  <button
+                    type="button"
+                    onClick={clearName}
+                    className="underline-offset-2 hover:text-accent hover:underline"
+                  >
+                    Not you? Change name
+                  </button>
+                </>
+              )}
+            </div>
           </div>
+
+          <WalletConnect isWalletVerified={isWalletVerified} walletAddress={walletAddress} onChange={refreshSession} />
+
+          {panel === "menu" && (
+            <div className="flex w-full max-w-sm flex-col gap-3">
+              <button
+                type="button"
+                onClick={handleFindRandom}
+                disabled={busy !== null}
+                className="arcade-btn-solid arcade-pulse w-full rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {busy === "queue" ? "Finding opponent..." : "Find Random Opponent"}
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateChallenge}
+                disabled={busy !== null}
+                className="arcade-btn w-full rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {busy === "challenge" ? "Creating link..." : "Challenge a Friend"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPanel("difficultyPicker")}
+                disabled={busy !== null}
+                className="arcade-btn w-full rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Play vs Computer
+              </button>
+            </div>
+          )}
+
+          {panel === "difficultyPicker" && (
+            <DifficultyPicker onSelect={handleSelectDifficulty} onBack={() => setPanel("menu")} />
+          )}
+
+          {panel === "challengeLink" && challengeLink && (
+            <ChallengeLinkPanel
+              link={challengeLink}
+              onEnterMatch={() => router.push(`/match/${challengeLink.split("/").pop()}`)}
+            />
+          )}
+
+          {error && (
+            <p className="text-sm" style={{ color: "var(--neon-magenta)" }}>
+              {error}
+            </p>
+          )}
         </div>
 
-        <WalletConnect isWalletVerified={isWalletVerified} walletAddress={walletAddress} onChange={refreshSession} />
-
-        {panel === "menu" && (
-          <div className="flex w-full max-w-sm flex-col gap-3">
-            <button
-              type="button"
-              onClick={handleFindRandom}
-              disabled={busy !== null}
-              className="arcade-btn-solid arcade-pulse w-full rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {busy === "queue" ? "Finding opponent..." : "Find Random Opponent"}
-            </button>
-            <button
-              type="button"
-              onClick={handleCreateChallenge}
-              disabled={busy !== null}
-              className="arcade-btn w-full rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {busy === "challenge" ? "Creating link..." : "Challenge a Friend"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setPanel("difficultyPicker")}
-              disabled={busy !== null}
-              className="arcade-btn w-full rounded-lg px-6 py-3 font-display font-semibold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Play vs Computer
-            </button>
-          </div>
-        )}
-
-        {panel === "difficultyPicker" && (
-          <DifficultyPicker onSelect={handleSelectDifficulty} onBack={() => setPanel("menu")} />
-        )}
-
-        {panel === "challengeLink" && challengeLink && (
-          <ChallengeLinkPanel
-            link={challengeLink}
-            onEnterMatch={() => router.push(`/match/${challengeLink.split("/").pop()}`)}
-          />
-        )}
-
-        {error && (
-          <p className="text-sm" style={{ color: "var(--neon-magenta)" }}>
-            {error}
-          </p>
-        )}
-
-        <div className="w-full max-w-sm">
+        {/* Leaderboard rail — same element reflows from "below the main
+            content" (narrow) to "beside it" (lg+) purely via the flex
+            direction change above, so there's exactly one copy of it. */}
+        <div className="w-full max-w-sm lg:w-80 lg:max-w-none lg:shrink-0 lg:pt-1">
           <AngledDivider color="cyan" />
           <div className="rps-depth-float arcade-panel rounded-lg p-4">
             <p
