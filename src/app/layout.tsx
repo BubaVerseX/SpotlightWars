@@ -29,6 +29,9 @@ export const metadata: Metadata = {
     title,
     description,
   },
+  other: {
+    "base:app_id": "6a5fbcb8426d14cfbad57602",
+  },
 };
 
 export default function RootLayout({
