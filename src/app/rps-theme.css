@@ -31,10 +31,30 @@
 
   --font-display: var(--font-orbitron);
 
+  /* Farcaster/Base App mini-app safe-area insets — zero by default (plain
+     browser), overwritten on document.documentElement by MiniAppProvider
+     once it knows it's running inside a mini app host. Declaring the
+     fallback here means every consumer (.rps-safe-area, .rps-header's
+     `top`) is correct immediately on first paint, before that JS runs. */
+  --rps-safe-top: 0px;
+  --rps-safe-right: 0px;
+  --rps-safe-bottom: 0px;
+  --rps-safe-left: 0px;
+
   position: relative;
   isolation: isolate;
   background: var(--background);
   color: var(--foreground);
+}
+
+/* Applied to the app's main content wrapper (not the fixed full-bleed
+   background layers, which should stay edge-to-edge regardless) so it
+   never sits under a mini app host's own chrome. */
+.rps-safe-area {
+  padding-top: var(--rps-safe-top);
+  padding-right: var(--rps-safe-right);
+  padding-bottom: var(--rps-safe-bottom);
+  padding-left: var(--rps-safe-left);
 }
 
 /* --- Perspective floor grid + horizon glow --- */
@@ -727,7 +747,10 @@
 
 .rps-header {
   position: sticky;
-  top: 0;
+  /* Sticks below the safe area (not physical viewport top:0) so it never
+     ends up hidden under a mini app host's own chrome while scrolled. Zero
+     in a plain browser, so this is a no-op there. */
+  top: var(--rps-safe-top);
   z-index: 50;
   background: rgba(5, 7, 13, 0.72);
   backdrop-filter: blur(14px);

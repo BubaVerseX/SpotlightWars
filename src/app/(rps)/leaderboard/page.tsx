@@ -1,10 +1,20 @@
+import type { Metadata } from "next";
 import { getRpsStore } from "@/lib/rps/store";
 import { toPublicProfile } from "@/lib/rps/name-claim";
 import { LeaderboardList } from "@/components/rps/LeaderboardList";
 import { AngledDivider } from "@/components/rps/AngledDivider";
 import { Footer } from "@/components/Footer";
+import { buildMiniAppEmbedTags, getSiteUrl } from "@/lib/miniapp/embed";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  other: buildMiniAppEmbedTags({
+    imageUrl: `${getSiteUrl()}/images/embed.png`,
+    buttonTitle: "View Leaderboard",
+    launchUrl: `${getSiteUrl()}/leaderboard`,
+  }),
+};
 
 export default async function LeaderboardPage() {
   const store = getRpsStore();
