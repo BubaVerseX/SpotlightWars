@@ -14,6 +14,7 @@ import {
   type CosmeticCategory,
 } from "@/lib/rps/cosmetics";
 import { Footer } from "@/components/Footer";
+import { AngledDivider } from "./AngledDivider";
 import { AI_DIFFICULTIES, AI_DIFFICULTY_LABEL } from "@/lib/rps/ai";
 
 const DIFFICULTY_COLOR: Record<string, string> = {
@@ -125,50 +126,68 @@ export function ProfilePage() {
   return (
     <>
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-16">
-        <BannerPreview bannerId={profile.equippedBanner} className="arcade-panel rounded-lg p-6 text-center">
-          <div className="flex items-center justify-center gap-3 text-xs">
-            <Link
-              href="/"
-              className="text-muted underline-offset-2 hover:text-[var(--neon-cyan)] hover:underline"
-            >
-              &larr; Back to Rock Paper Scissors
-            </Link>
-            <span className="text-muted">·</span>
-            <Link href="/shop" className="text-muted underline-offset-2 hover:text-[var(--neon-cyan)] hover:underline">
-              Visit the Shop
-            </Link>
-          </div>
-          <p className="mt-4 text-xs uppercase tracking-[0.3em] text-muted">Player Card</p>
-          <h1
-            className="mt-2 font-display text-3xl font-bold uppercase tracking-wide"
-            style={{ color: "var(--neon-cyan)", textShadow: "0 0 16px var(--neon-cyan-soft)" }}
-          >
-            {profile.name}
-          </h1>
-          <p
-            className="mt-1 text-sm font-semibold uppercase tracking-wide"
-            style={{ color: tier.color }}
+        <div className="relative">
+          <span
+            className="rps-breakout-badge rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide"
+            style={{
+              color: tier.color,
+              background: "var(--background-elevated)",
+              border: `1.5px solid ${tier.color}`,
+              boxShadow: `0 0 14px ${tier.color}77`,
+            }}
           >
             {tier.name}
-          </p>
-          {!isWalletVerified && (
-            <button
-              type="button"
-              onClick={clearName}
-              className="mt-2 text-xs text-muted underline-offset-2 hover:text-accent hover:underline"
+          </span>
+          <BannerPreview
+            bannerId={profile.equippedBanner}
+            className="rps-depth-float arcade-panel rounded-lg p-6 text-center"
+          >
+            <div className="flex items-center justify-center gap-3 text-xs">
+              <Link
+                href="/"
+                className="text-muted underline-offset-2 hover:text-[var(--neon-cyan)] hover:underline"
+              >
+                &larr; Back to Rock Paper Scissors
+              </Link>
+              <span className="text-muted">·</span>
+              <Link href="/shop" className="text-muted underline-offset-2 hover:text-[var(--neon-cyan)] hover:underline">
+                Visit the Shop
+              </Link>
+            </div>
+            <p className="mt-4 text-xs uppercase tracking-[0.3em] text-muted">Player Card</p>
+            <h1
+              className="mt-2 font-display text-3xl font-bold uppercase tracking-wide"
+              style={{ color: "var(--neon-cyan)", textShadow: "0 0 16px var(--neon-cyan-soft)" }}
             >
-              Not you? Change name
-            </button>
-          )}
-          <div className="mt-4 flex justify-center">
-            <WalletConnect isWalletVerified={isWalletVerified} walletAddress={walletAddress} onChange={refreshSession} />
-          </div>
-        </BannerPreview>
+              {profile.name}
+            </h1>
+            {!isWalletVerified && (
+              <button
+                type="button"
+                onClick={clearName}
+                className="mt-2 text-xs text-muted underline-offset-2 hover:text-accent hover:underline"
+              >
+                Not you? Change name
+              </button>
+            )}
+            <div className="mt-4 flex justify-center">
+              <WalletConnect isWalletVerified={isWalletVerified} walletAddress={walletAddress} onChange={refreshSession} />
+            </div>
+          </BannerPreview>
+        </div>
 
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <Stat label="ELO" value={profile.elo} color="var(--neon-cyan)" />
-          <Stat label="Wins" value={profile.wins} color="var(--neon-cyan)" />
-          <Stat label="Losses" value={profile.losses} color="var(--neon-magenta)" />
+        <AngledDivider color="cyan" />
+
+        <div className="grid grid-cols-2 gap-3 text-center sm:grid-cols-3 sm:grid-rows-2">
+          <div className="col-span-2 sm:col-span-2 sm:row-span-2">
+            <Stat label="ELO" value={profile.elo} color="var(--neon-cyan)" size="lg" />
+          </div>
+          <div className="sm:col-start-3 sm:row-start-1">
+            <Stat label="Wins" value={profile.wins} color="var(--neon-cyan)" />
+          </div>
+          <div className="sm:col-start-3 sm:row-start-2">
+            <Stat label="Losses" value={profile.losses} color="var(--neon-magenta)" />
+          </div>
         </div>
 
         <div>
@@ -259,6 +278,8 @@ export function ProfilePage() {
           </div>
         </div>
 
+        <AngledDivider color="gold" />
+
         <div>
           <p
             className="mb-3 text-center text-xs uppercase tracking-[0.3em]"
@@ -309,10 +330,24 @@ export function ProfilePage() {
   );
 }
 
-function Stat({ label, value, color }: { label: string; value: number; color: string }) {
+function Stat({
+  label,
+  value,
+  color,
+  size = "md",
+}: {
+  label: string;
+  value: number;
+  color: string;
+  size?: "md" | "lg";
+}) {
   return (
-    <div className="arcade-panel rounded-lg px-4 py-3">
-      <p className="font-display text-2xl font-bold" style={{ color }}>
+    <div
+      className={`rps-depth-float arcade-panel flex h-full flex-col justify-center rounded-lg ${
+        size === "lg" ? "px-6 py-6" : "px-4 py-3"
+      }`}
+    >
+      <p className={`font-display font-bold ${size === "lg" ? "text-5xl" : "text-2xl"}`} style={{ color }}>
         {value}
       </p>
       <p className="text-xs uppercase tracking-wide text-muted">{label}</p>

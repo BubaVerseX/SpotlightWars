@@ -13,6 +13,7 @@ interface ShopItemCardProps {
   isWalletVerified: boolean;
   verifiedAddress: string | null;
   onUnlocked: (profile: PublicPlayerProfile) => void;
+  featured?: boolean;
 }
 
 export function ShopItemCard({
@@ -25,15 +26,40 @@ export function ShopItemCard({
   isWalletVerified,
   verifiedAddress,
   onUnlocked,
+  featured = false,
 }: ShopItemCardProps) {
   const usdEstimate = priceEth && ethUsdRate ? (parseFloat(priceEth) * ethUsdRate).toFixed(2) : null;
 
   return (
-    <div className="arcade-panel flex flex-col gap-3 rounded-lg p-4">
-      <CosmeticPreview id={cosmetic.id} category={cosmetic.category} />
+    <div
+      className={`rps-depth-float relative flex h-full flex-col gap-3 rounded-lg ${
+        featured ? "arcade-panel-magenta p-5 pt-8" : "arcade-panel p-4"
+      }`}
+    >
+      {featured && (
+        <span
+          className="rps-breakout-badge rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide"
+          style={{
+            color: "#1a0a1f",
+            background: "var(--neon-magenta)",
+            boxShadow: "0 0 14px var(--neon-magenta), 0 0 28px var(--neon-magenta-soft)",
+          }}
+        >
+          Featured
+        </span>
+      )}
+      <div className={featured ? "flex justify-center" : undefined}>
+        <div className={featured ? "rps-breakout-icon" : undefined}>
+          <CosmeticPreview id={cosmetic.id} category={cosmetic.category} size={featured ? "lg" : "md"} />
+        </div>
+      </div>
 
-      <div>
-        <p className="font-display text-sm font-semibold uppercase tracking-wide text-foreground">
+      <div className={featured ? "text-center" : undefined}>
+        <p
+          className={`font-display font-semibold uppercase tracking-wide text-foreground ${
+            featured ? "text-base" : "text-sm"
+          }`}
+        >
           {cosmetic.name}
         </p>
         <p className="text-xs text-muted">{cosmetic.description}</p>

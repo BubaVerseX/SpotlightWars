@@ -8,6 +8,7 @@ import { getShopPriceEth } from "@/lib/rps/shop";
 import type { PublicPlayerProfile } from "@/lib/rps/types";
 import { WalletConnect } from "./WalletConnect";
 import { ShopItemCard } from "./ShopItemCard";
+import { AngledDivider } from "./AngledDivider";
 import { Footer } from "@/components/Footer";
 
 const CATEGORY_TABS: { id: CosmeticCategory; label: string }[] = [
@@ -74,6 +75,8 @@ export function ShopPage() {
           </div>
         )}
 
+        <AngledDivider color="cyan" size="sm" />
+
         <div className="flex flex-wrap justify-center gap-2">
           {CATEGORY_TABS.map((tab) => (
             <button
@@ -99,31 +102,40 @@ export function ShopPage() {
             on the home page to see your unlock progress here.
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-            {itemsInCategory.map((cosmetic) => {
-              const isUnlocked = profile?.unlockedCosmetics.includes(cosmetic.id) ?? false;
-              const achievement = ACHIEVEMENTS.find((a) => a.id === cosmetic.achievementId);
-              const achievementProgress = achievement
-                ? (profile?.achievementProgress[achievement.id] ?? 0)
-                : 0;
-              const priceEth = getShopPriceEth(cosmetic.id);
+          <>
+            <AngledDivider color="magenta" size="sm" />
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 [grid-auto-flow:dense]">
+              {itemsInCategory.map((cosmetic, index) => {
+                const isUnlocked = profile?.unlockedCosmetics.includes(cosmetic.id) ?? false;
+                const achievement = ACHIEVEMENTS.find((a) => a.id === cosmetic.achievementId);
+                const achievementProgress = achievement
+                  ? (profile?.achievementProgress[achievement.id] ?? 0)
+                  : 0;
+                const priceEth = getShopPriceEth(cosmetic.id);
+                const featured = index === 0;
 
-              return (
-                <ShopItemCard
-                  key={cosmetic.id}
-                  cosmetic={cosmetic}
-                  isUnlocked={isUnlocked}
-                  achievement={achievement}
-                  achievementProgress={achievementProgress}
-                  priceEth={priceEth}
-                  ethUsdRate={ethUsdRate}
-                  isWalletVerified={isWalletVerified}
-                  verifiedAddress={walletAddress}
-                  onUnlocked={setProfile}
-                />
-              );
-            })}
-          </div>
+                return (
+                  <div
+                    key={cosmetic.id}
+                    className={`h-full ${featured ? "col-span-2 sm:col-span-2 sm:row-span-2" : "col-span-1"}`}
+                  >
+                    <ShopItemCard
+                      cosmetic={cosmetic}
+                      isUnlocked={isUnlocked}
+                      achievement={achievement}
+                      achievementProgress={achievementProgress}
+                      priceEth={priceEth}
+                      ethUsdRate={ethUsdRate}
+                      isWalletVerified={isWalletVerified}
+                      verifiedAddress={walletAddress}
+                      onUnlocked={setProfile}
+                      featured={featured}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </main>
       <Footer />

@@ -439,7 +439,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         {phase === "loading" && <p className="text-muted">Connecting...</p>}
 
         {phase === "unavailable" && (
-          <div className="arcade-panel-magenta max-w-sm space-y-4 rounded-lg p-6">
+          <div className="rps-depth-float arcade-panel-magenta max-w-sm space-y-4 rounded-lg p-6">
             <p
               className="font-display text-2xl font-bold uppercase tracking-wide"
               style={{ color: "var(--neon-magenta)" }}
@@ -454,7 +454,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         )}
 
         {phase === "waiting" && (
-          <div className="arcade-panel space-y-4 rounded-lg p-6">
+          <div className="rps-depth-float arcade-panel space-y-4 rounded-lg p-6">
             <p className="font-display text-2xl font-bold uppercase tracking-wide text-foreground">
               Waiting for an opponent...
             </p>
@@ -465,7 +465,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         )}
 
         {phase === "queueTimedOut" && (
-          <div className="arcade-panel-magenta space-y-4 rounded-lg p-6">
+          <div className="rps-depth-float arcade-panel-magenta space-y-4 rounded-lg p-6">
             <p
               className="font-display text-2xl font-bold uppercase tracking-wide"
               style={{ color: "var(--neon-magenta)" }}
@@ -483,7 +483,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         )}
 
         {phase === "full" && (
-          <div className="arcade-panel-magenta space-y-4 rounded-lg p-6">
+          <div className="rps-depth-float arcade-panel-magenta space-y-4 rounded-lg p-6">
             <p
               className="font-display text-2xl font-bold uppercase tracking-wide"
               style={{ color: "var(--neon-magenta)" }}
@@ -500,7 +500,7 @@ export function MatchRoom({ matchId }: { matchId: string }) {
         )}
 
         {phase === "disconnected" && (
-          <div className="arcade-panel-magenta space-y-4 rounded-lg p-6">
+          <div className="rps-depth-float arcade-panel-magenta space-y-4 rounded-lg p-6">
             <p
               className="font-display text-2xl font-bold uppercase tracking-wide"
               style={{ color: "var(--neon-magenta)" }}

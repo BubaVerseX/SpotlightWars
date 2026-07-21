@@ -603,3 +603,112 @@
     0 0 16px var(--neon-gold-soft),
     0 0 32px rgba(255, 216, 74, 0.15);
 }
+
+/* ============================================================
+ * Layout composition system — used across the landing, shop,
+ * leaderboard and profile pages to break the "uniform grid of
+ * boxes" feeling. Three reusable pieces, kept deliberately
+ * consistent so the pattern reads the same on every page:
+ *
+ *  - .rps-divider          angled glowing seam between sections
+ *                           (fixed 6deg rotation, contained in a
+ *                           fixed-height band so it never collides
+ *                           with neighboring content at any width)
+ *  - .rps-depth-float       floating drop-shadow + faint outer glow
+ *                           for cards that should read as "layered"
+ *  - .rps-breakout-icon     lets a preview icon bleed above the top
+ *                           edge of its own card instead of sitting
+ *                           neatly inside it
+ * ============================================================ */
+
+.rps-divider {
+  --divider-color: var(--neon-cyan);
+  --divider-glow: var(--neon-cyan-soft);
+  position: relative;
+  height: 32px;
+  width: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.rps-divider::before {
+  content: "";
+  position: absolute;
+  left: -8%;
+  right: -8%;
+  top: 50%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--divider-color) 15%,
+    var(--divider-color) 85%,
+    transparent
+  );
+  box-shadow:
+    0 0 8px var(--divider-color),
+    0 0 20px var(--divider-glow);
+  transform: translateY(-50%) rotate(-6deg);
+  opacity: 0.85;
+}
+
+.rps-divider-sm {
+  height: 20px;
+}
+
+.rps-divider-magenta {
+  --divider-color: var(--neon-magenta);
+  --divider-glow: var(--neon-magenta-soft);
+}
+
+.rps-divider-gold {
+  --divider-color: var(--neon-gold);
+  --divider-glow: var(--neon-gold-soft);
+}
+
+/* --- Overlapping depth: floating shadow + glow bleed --- */
+
+.rps-depth-float {
+  box-shadow:
+    0 10px 28px -10px rgba(0, 0, 0, 0.65),
+    0 0 24px -4px var(--neon-cyan-soft);
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.rps-depth-float:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 16px 34px -10px rgba(0, 0, 0, 0.7),
+    0 0 30px -2px var(--neon-cyan-soft);
+}
+
+.rps-depth-float-gold {
+  box-shadow:
+    0 10px 28px -10px rgba(0, 0, 0, 0.65),
+    0 0 26px -4px var(--neon-gold-soft);
+}
+
+.rps-depth-float-gold:hover {
+  box-shadow:
+    0 16px 34px -10px rgba(0, 0, 0, 0.7),
+    0 0 32px -2px var(--neon-gold-soft);
+}
+
+/* --- An icon/badge intentionally breaking past its card's edge --- */
+
+.rps-breakout-icon {
+  position: relative;
+  z-index: 2;
+  margin-top: -1.75rem;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.55));
+}
+
+.rps-breakout-badge {
+  position: absolute;
+  top: -0.85rem;
+  right: -0.6rem;
+  z-index: 3;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
+}

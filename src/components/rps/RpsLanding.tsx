@@ -11,6 +11,7 @@ import { WalletConnect } from "./WalletConnect";
 import { useRpsIdentity } from "@/lib/rps/use-identity";
 import type { AiDifficulty, PublicPlayerProfile } from "@/lib/rps/types";
 import { Footer } from "@/components/Footer";
+import { AngledDivider } from "./AngledDivider";
 
 interface RpsLandingProps {
   initialLeaderboard: PublicPlayerProfile[];
@@ -212,14 +213,17 @@ export function RpsLanding({ initialLeaderboard }: RpsLandingProps) {
           </p>
         )}
 
-        <div className="arcade-panel w-full max-w-sm rounded-lg p-4">
-          <p
-            className="mb-3 text-center text-xs uppercase tracking-[0.3em]"
-            style={{ color: "var(--neon-cyan)", textShadow: "0 0 10px var(--neon-cyan-soft)" }}
-          >
-            High Scores
-          </p>
-          <LeaderboardList entries={initialLeaderboard} />
+        <div className="w-full max-w-sm">
+          <AngledDivider color="cyan" />
+          <div className="rps-depth-float arcade-panel rounded-lg p-4">
+            <p
+              className="mb-3 text-center text-xs uppercase tracking-[0.3em]"
+              style={{ color: "var(--neon-cyan)", textShadow: "0 0 10px var(--neon-cyan-soft)" }}
+            >
+              High Scores
+            </p>
+            <LeaderboardList entries={initialLeaderboard} />
+          </div>
         </div>
       </main>
       <Footer extraLink={{ href: "/spotlight", label: "Check out Spotlight Throne" }} />
