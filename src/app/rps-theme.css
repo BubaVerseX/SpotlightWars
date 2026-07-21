@@ -928,3 +928,52 @@
     0 0 18px rgba(0, 240, 255, 0.12);
   animation: rps-header-dropdown-in 140ms ease-out;
 }
+
+/* ============================================================
+ * Community prize pool progress bar
+ * ============================================================ */
+
+.rps-prize-pool-track {
+  position: relative;
+  height: 14px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+}
+
+.rps-prize-pool-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+  box-shadow:
+    0 0 10px var(--neon-cyan-soft),
+    0 0 18px var(--neon-magenta-soft);
+  transition: width 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rps-prize-pool-fill.full {
+  background: linear-gradient(90deg, var(--neon-gold), #fff2b8, var(--neon-gold));
+  background-size: 200% 100%;
+  box-shadow:
+    0 0 16px var(--neon-gold),
+    0 0 34px var(--neon-gold-soft);
+  animation: rps-prize-pool-shimmer 2.2s linear infinite;
+}
+
+@keyframes rps-prize-pool-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.rps-prize-pool-full {
+  border-color: var(--neon-gold);
+  box-shadow:
+    0 0 20px var(--neon-gold-soft),
+    0 0 40px rgba(255, 216, 74, 0.12);
+}
